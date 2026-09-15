@@ -1,6 +1,6 @@
 /* ============================================
-   3D GAME ENGINE + CITY BACKGROUND + CITY OBSTACLES
-   Full replacement file
+   ITACHI CHASE - 3D GAME ENGINE
+   Sharingan Orbs + City Background + DDA
    ============================================ */
 let scene, camera, renderer;
 let currentLane = 1;
@@ -9,14 +9,12 @@ let touchStartX = 0;
 let touchStartY = 0;
 let touchStartTime = 0;
 
-// Base game variables
 let baseSpeed = 2.5;
 let gameSpeed = 2.5;
 let timeScale = 1.0;
 let obstacleSpawnRate = 0.015;
 let coinSpawnRate = 0.03;
 
-// DDA variables
 let ddaEnabled = true;
 let ddaCheckInterval = 2000;
 let lastDDACheck = 0;
@@ -45,10 +43,6 @@ function initThreeJS() {
     const height = container.clientHeight;
 
     scene = new THREE.Scene();
-
-    // ============================================
-    // CITY SKY - Purple/pink night sky gradient
-    // ============================================
     scene.background = new THREE.Color(0x1a0a2e);
     scene.fog = new THREE.Fog(0x2a1040, 40, 140);
 
@@ -63,9 +57,6 @@ function initThreeJS() {
     renderer.shadowMap.enabled = true;
     container.appendChild(renderer.domElement);
 
-    // ============================================
-    // LIGHTING - Night city mood
-    // ============================================
     const ambientLight = new THREE.AmbientLight(0x6060b0, 0.7);
     scene.add(ambientLight);
 
@@ -76,13 +67,11 @@ function initThreeJS() {
     dirLight.shadow.mapSize.height = 1024;
     scene.add(dirLight);
 
-    // Neon glow from city
-    const cityGlow = new THREE.PointLight(0xff00ff, 0.6, 80);
+    const cityGlow = new THREE.PointLight(0xff0040, 0.8, 80);
     cityGlow.position.set(-6, 15, -40);
     scene.add(cityGlow);
 
-    // Hero area light
-    const heroLight = new THREE.PointLight(0x00b8b8, 1, 30);
+    const heroLight = new THREE.PointLight(0xff2020, 1, 30);
     heroLight.position.set(-6, 6, -5);
     scene.add(heroLight);
 
@@ -101,10 +90,9 @@ function initThreeJS() {
 }
 
 /* ============================================
-   DISTANT STARS (in sky)
+   SKY - Stars + Blood Moon (Itachi theme)
    ============================================ */
 function createSky() {
-    // Stars
     const starsGeo = new THREE.BufferGeometry();
     const starsCount = 300;
     const positions = new Float32Array(starsCount * 3);
@@ -127,17 +115,17 @@ function createSky() {
     const stars = new THREE.Points(starsGeo, starsMat);
     scene.add(stars);
 
-    // Moon
-    const moonGeo = new THREE.SphereGeometry(6, 32, 32);
-    const moonMat = new THREE.MeshBasicMaterial({ color: 0xe8d8ff });
+    // Blood red moon
+    const moonGeo = new THREE.SphereGeometry(7, 32, 32);
+    const moonMat = new THREE.MeshBasicMaterial({ color: 0xdd2020 });
     const moon = new THREE.Mesh(moonGeo, moonMat);
     moon.position.set(25, 40, -120);
     scene.add(moon);
 
     // Moon glow
-    const glowGeo = new THREE.SphereGeometry(8, 32, 32);
+    const glowGeo = new THREE.SphereGeometry(9, 32, 32);
     const glowMat = new THREE.MeshBasicMaterial({
-        color: 0xa080ff, transparent: true, opacity: 0.15
+        color: 0xff4040, transparent: true, opacity: 0.2
     });
     const glow = new THREE.Mesh(glowGeo, glowMat);
     glow.position.copy(moon.position);
@@ -145,15 +133,12 @@ function createSky() {
 }
 
 /* ============================================
-   GROUND (moving sidewalk/grass)
+   GROUND
    ============================================ */
 function createGround() {
-    // Main ground
     const groundGeo = new THREE.PlaneGeometry(200, 300);
     const groundMat = new THREE.MeshStandardMaterial({
-        color: 0x1a1030,
-        metalness: 0.1,
-        roughness: 0.95
+        color: 0x1a1030, metalness: 0.1, roughness: 0.95
     });
     const ground = new THREE.Mesh(groundGeo, groundMat);
     ground.rotation.x = -Math.PI / 2;
@@ -161,29 +146,22 @@ function createGround() {
     ground.receiveShadow = true;
     scene.add(ground);
 
-    // Sidewalks (left and right)
     const sidewalkMat = new THREE.MeshStandardMaterial({
         color: 0x3a3a5a, metalness: 0.2, roughness: 0.9
     });
 
-    const sidewalkL = new THREE.Mesh(
-        new THREE.PlaneGeometry(4, 300),
-        sidewalkMat
-    );
+    const sidewalkL = new THREE.Mesh(new THREE.PlaneGeometry(4, 300), sidewalkMat);
     sidewalkL.rotation.x = -Math.PI / 2;
     sidewalkL.position.set(-11, 0, -100);
     scene.add(sidewalkL);
 
-    const sidewalkR = new THREE.Mesh(
-        new THREE.PlaneGeometry(4, 300),
-        sidewalkMat
-    );
+    const sidewalkR = new THREE.Mesh(new THREE.PlaneGeometry(4, 300), sidewalkMat);
     sidewalkR.rotation.x = -Math.PI / 2;
     sidewalkR.position.set(-1, 0, -100);
     scene.add(sidewalkR);
 
-    // Sidewalk edge lines (neon)
-    const edgeMat = new THREE.MeshBasicMaterial({ color: 0xff00ff });
+    // Neon red edges
+    const edgeMat = new THREE.MeshBasicMaterial({ color: 0xff0040 });
     for (let i = 0; i < 60; i++) {
         const edgeGeo = new THREE.PlaneGeometry(0.1, 2);
         const edgeL = new THREE.Mesh(edgeGeo, edgeMat);
@@ -201,19 +179,16 @@ function createGround() {
 }
 
 /* ============================================
-   CITY SKYLINE (distant buildings in background)
+   CITY SKYLINE
    ============================================ */
 function createCitySkyline() {
-    // Distant skyline (far background)
     const distantColors = [0x1a0a2e, 0x2a1040, 0x3a1550];
 
     for (let i = 0; i < 40; i++) {
         const height = 15 + Math.random() * 40;
         const width = 3 + Math.random() * 4;
         const geo = new THREE.BoxGeometry(width, height, width);
-        const mat = new THREE.MeshBasicMaterial({
-            color: distantColors[i % 3]
-        });
+        const mat = new THREE.MeshBasicMaterial({ color: distantColors[i % 3] });
         const building = new THREE.Mesh(geo, mat);
         building.position.set(
             (Math.random() - 0.5) * 200,
@@ -222,13 +197,12 @@ function createCitySkyline() {
         );
         scene.add(building);
 
-        // Lit windows
         const winCount = Math.floor(height / 3);
         for (let w = 0; w < winCount; w++) {
             if (Math.random() > 0.5) continue;
             const winGeo = new THREE.PlaneGeometry(0.5, 0.5);
             const winMat = new THREE.MeshBasicMaterial({
-                color: Math.random() > 0.5 ? 0xffaa00 : 0xff00ff
+                color: Math.random() > 0.5 ? 0xff2020 : 0xff0060
             });
             const win = new THREE.Mesh(winGeo, winMat);
             win.position.set(
@@ -240,16 +214,13 @@ function createCitySkyline() {
         }
     }
 
-    // Near buildings (left and right of road)
     const nearColors = [0x2a1040, 0x3a1550, 0x1a0a2e];
 
     for (let i = 0; i < 30; i++) {
         const height = 8 + Math.random() * 25;
         const geo = new THREE.BoxGeometry(5, height, 5);
         const mat = new THREE.MeshStandardMaterial({
-            color: nearColors[i % 3],
-            metalness: 0.4,
-            roughness: 0.7
+            color: nearColors[i % 3], metalness: 0.4, roughness: 0.7
         });
         const building = new THREE.Mesh(geo, mat);
         const side = i % 2 === 0 ? 1 : -1;
@@ -261,14 +232,13 @@ function createCitySkyline() {
         building.castShadow = true;
         scene.add(building);
 
-        // Windows
         const rows = Math.floor(height / 2.5);
         for (let row = 0; row < rows; row++) {
             for (let col = 0; col < 3; col++) {
                 if (Math.random() > 0.6) continue;
                 const winGeo = new THREE.PlaneGeometry(0.6, 0.6);
                 const winMat = new THREE.MeshBasicMaterial({
-                    color: Math.random() > 0.5 ? 0xffcc00 : 0x00ccff
+                    color: Math.random() > 0.5 ? 0xff2020 : 0xff0060
                 });
                 const win = new THREE.Mesh(winGeo, winMat);
                 win.position.set(
@@ -284,12 +254,12 @@ function createCitySkyline() {
 }
 
 /* ============================================
-   ROAD (asphalt with lane markings)
+   ROAD
    ============================================ */
 function createRoad() {
     const roadGeo = new THREE.PlaneGeometry(12, 300);
     const roadMat = new THREE.MeshStandardMaterial({
-        color: 0x252535, metalness: 0.4, roughness: 0.85
+        color: 0x1a1525, metalness: 0.4, roughness: 0.85
     });
     const road = new THREE.Mesh(roadGeo, roadMat);
     road.rotation.x = -Math.PI / 2;
@@ -297,11 +267,10 @@ function createRoad() {
     road.receiveShadow = true;
     scene.add(road);
 
-    // Lane dividers (dashed white)
     for (let lane = 0; lane < 3; lane++) {
         for (let i = 0; i < 60; i++) {
             const lineGeo = new THREE.PlaneGeometry(0.15, 2);
-            const lineMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+            const lineMat = new THREE.MeshBasicMaterial({ color: 0xff2020 });
             const line = new THREE.Mesh(lineGeo, lineMat);
             line.rotation.x = -Math.PI / 2;
             line.position.set(LANE_POSITIONS[lane] - 1, 0.02, -i * 4 + 20);
@@ -311,10 +280,9 @@ function createRoad() {
         }
     }
 
-    // Yellow edge lines
     for (let i = 0; i < 60; i++) {
         const edgeGeo = new THREE.PlaneGeometry(0.2, 2);
-        const edgeMat = new THREE.MeshBasicMaterial({ color: 0xffcc00 });
+        const edgeMat = new THREE.MeshBasicMaterial({ color: 0xff6000 });
 
         const edgeL = new THREE.Mesh(edgeGeo, edgeMat);
         edgeL.rotation.x = -Math.PI / 2;
@@ -334,34 +302,31 @@ function createRoad() {
 }
 
 /* ============================================
-   STREET LIGHTS (on sidewalks)
+   STREET LIGHTS (with red glow)
    ============================================ */
 function createStreetLights() {
     for (let i = 0; i < 20; i++) {
         const side = i % 2 === 0 ? 1 : -1;
         const xPos = -6 + side * 13;
 
-        // Pole
         const poleGeo = new THREE.CylinderGeometry(0.1, 0.1, 6, 8);
         const poleMat = new THREE.MeshStandardMaterial({
-            color: 0x555555, metalness: 0.7, roughness: 0.4
+            color: 0x333333, metalness: 0.7, roughness: 0.4
         });
         const pole = new THREE.Mesh(poleGeo, poleMat);
         pole.position.set(xPos, 3, -i * 15 - 5);
         pole.castShadow = true;
         scene.add(pole);
 
-        // Light head
         const headGeo = new THREE.SphereGeometry(0.3, 12, 12);
-        const headMat = new THREE.MeshBasicMaterial({ color: 0xffdd66 });
+        const headMat = new THREE.MeshBasicMaterial({ color: 0xff3030 });
         const head = new THREE.Mesh(headGeo, headMat);
         head.position.set(xPos, 6, -i * 15 - 5);
         scene.add(head);
 
-        // Glow sphere
         const glowGeo = new THREE.SphereGeometry(0.8, 12, 12);
         const glowMat = new THREE.MeshBasicMaterial({
-            color: 0xffaa33, transparent: true, opacity: 0.3
+            color: 0xff2020, transparent: true, opacity: 0.3
         });
         const glow = new THREE.Mesh(glowGeo, glowMat);
         glow.position.copy(head.position);
@@ -372,7 +337,7 @@ function createStreetLights() {
 }
 
 /* ============================================
-   TREES (on sidewalks)
+   TREES
    ============================================ */
 function createTrees() {
     for (let i = 0; i < 20; i++) {
@@ -380,19 +345,17 @@ function createTrees() {
         const xPos = -6 + side * 15;
         const zPos = -i * 15 - 10;
 
-        // Trunk
         const trunkGeo = new THREE.CylinderGeometry(0.2, 0.3, 2, 8);
         const trunkMat = new THREE.MeshStandardMaterial({
-            color: 0x4a2a1a, metalness: 0.1, roughness: 0.9
+            color: 0x3a1a0a, metalness: 0.1, roughness: 0.9
         });
         const trunk = new THREE.Mesh(trunkGeo, trunkMat);
         trunk.position.set(xPos, 1, zPos);
         trunk.castShadow = true;
         scene.add(trunk);
 
-        // Leaves (3 spheres)
         const leafMat = new THREE.MeshStandardMaterial({
-            color: 0x2a6a3a, metalness: 0.1, roughness: 0.9
+            color: 0x1a3a1a, metalness: 0.1, roughness: 0.9
         });
 
         const leaf1 = new THREE.Mesh(new THREE.SphereGeometry(1.2, 12, 12), leafMat);
@@ -499,7 +462,7 @@ function updateDDAIndicator(mode) {
             left: 10px;
             padding: 5px 12px;
             background: rgba(13,43,78,0.85);
-            border: 2px solid #00b8b8;
+            border: 2px solid #ff2020;
             border-radius: 20px;
             color: #eaf4fb;
             font-size: 11px;
@@ -514,7 +477,7 @@ function updateDDAIndicator(mode) {
     const modeColors = {
         'Mercy': '#2ecc71',
         'Easy': '#3498db',
-        'Normal': '#00b8b8',
+        'Normal': '#ff2020',
         'Challenge': '#f39c12',
         'Hard': '#e74c3c'
     };
@@ -583,7 +546,6 @@ function animate() {
 
     hero.update(effectiveSpeed);
 
-    // Camera follows hero smoothly
     const targetCamX = hero.group.position.x;
     camera.position.x += (targetCamX - camera.position.x) * 0.08;
     camera.lookAt(hero.group.position.x, 1.2, -20);
@@ -610,7 +572,6 @@ function animate() {
     updateCoins(effectiveSpeed);
     updateParticles();
 
-    // Move street lights
     streetLights.forEach(light => {
         light.pole.position.z += effectiveSpeed * 0.15;
         light.head.position.z += effectiveSpeed * 0.15;
@@ -622,7 +583,6 @@ function animate() {
         }
     });
 
-    // Move trees
     trees.forEach(tree => {
         tree.trunk.position.z += effectiveSpeed * 0.15;
         tree.leaf1.position.z += effectiveSpeed * 0.15;
@@ -636,7 +596,6 @@ function animate() {
         }
     });
 
-    // Move road markings
     roadOffset = (roadOffset + effectiveSpeed * 0.1) % 4;
     const road = scene.userData.road;
     if (road && road.userData.lines) {
@@ -650,7 +609,7 @@ function animate() {
 }
 
 /* ============================================
-   OBSTACLES - City themed (not boxes)
+   OBSTACLES - City themed
    ============================================ */
 function spawnObstacle() {
     const lane = Math.floor(Math.random() * 3);
@@ -660,23 +619,12 @@ function spawnObstacle() {
     let obstacle;
 
     switch (type) {
-        case 0:
-            obstacle = createTrashCan();
-            break;
-        case 1:
-            obstacle = createBarrier();
-            break;
-        case 2:
-            obstacle = createTrafficCone();
-            break;
-        case 3:
-            obstacle = createFireHydrant();
-            break;
-        case 4:
-            obstacle = createCar();
-            break;
-        default:
-            obstacle = createBarrier();
+        case 0: obstacle = createTrashCan(); break;
+        case 1: obstacle = createBarrier(); break;
+        case 2: obstacle = createTrafficCone(); break;
+        case 3: obstacle = createFireHydrant(); break;
+        case 4: obstacle = createCar(); break;
+        default: obstacle = createBarrier();
     }
 
     obstacle.position.x = LANE_POSITIONS[lane];
@@ -686,35 +634,30 @@ function spawnObstacle() {
     obstacles.push(obstacle);
 }
 
-/* ============================================
-   TRASH CAN (metal bin)
-   ============================================ */
 function createTrashCan() {
     const group = new THREE.Group();
 
     const bodyGeo = new THREE.CylinderGeometry(0.4, 0.35, 1.2, 12);
     const bodyMat = new THREE.MeshStandardMaterial({
-        color: 0x4a4a4a, metalness: 0.7, roughness: 0.4
+        color: 0x3a3a3a, metalness: 0.7, roughness: 0.4
     });
     const body = new THREE.Mesh(bodyGeo, bodyMat);
     body.position.y = 0.6;
     body.castShadow = true;
     group.add(body);
 
-    // Lid
     const lidGeo = new THREE.CylinderGeometry(0.45, 0.45, 0.1, 12);
     const lidMat = new THREE.MeshStandardMaterial({
-        color: 0x2a2a2a, metalness: 0.8, roughness: 0.3
+        color: 0x1a1a1a, metalness: 0.8, roughness: 0.3
     });
     const lid = new THREE.Mesh(lidGeo, lidMat);
     lid.position.y = 1.25;
     group.add(lid);
 
-    // Ridges
     for (let i = 0; i < 3; i++) {
         const ridgeGeo = new THREE.TorusGeometry(0.42, 0.03, 6, 12);
         const ridgeMat = new THREE.MeshStandardMaterial({
-            color: 0x666666, metalness: 0.9, roughness: 0.2
+            color: 0x555555, metalness: 0.9, roughness: 0.2
         });
         const ridge = new THREE.Mesh(ridgeGeo, ridgeMat);
         ridge.rotation.x = Math.PI / 2;
@@ -722,17 +665,12 @@ function createTrashCan() {
         group.add(ridge);
     }
 
-    group.position.y = 0;
     return group;
 }
 
-/* ============================================
-   CONSTRUCTION BARRIER
-   ============================================ */
 function createBarrier() {
     const group = new THREE.Group();
 
-    // Yellow/black striped bar
     const barGeo = new THREE.BoxGeometry(1.8, 0.3, 0.2);
     const barMat = new THREE.MeshStandardMaterial({
         color: 0xffcc00, metalness: 0.3, roughness: 0.6
@@ -742,7 +680,6 @@ function createBarrier() {
     bar.castShadow = true;
     group.add(bar);
 
-    // Black stripes
     for (let i = 0; i < 3; i++) {
         const stripeGeo = new THREE.BoxGeometry(0.3, 0.31, 0.21);
         const stripeMat = new THREE.MeshStandardMaterial({ color: 0x000000 });
@@ -751,7 +688,6 @@ function createBarrier() {
         group.add(stripe);
     }
 
-    // Legs
     const legGeo = new THREE.BoxGeometry(0.15, 1, 0.15);
     const legMat = new THREE.MeshStandardMaterial({
         color: 0xffcc00, metalness: 0.3, roughness: 0.6
@@ -770,13 +706,9 @@ function createBarrier() {
     return group;
 }
 
-/* ============================================
-   TRAFFIC CONE
-   ============================================ */
 function createTrafficCone() {
     const group = new THREE.Group();
 
-    // Orange cone
     const coneGeo = new THREE.ConeGeometry(0.35, 1, 12);
     const coneMat = new THREE.MeshStandardMaterial({
         color: 0xff5500, metalness: 0.2, roughness: 0.7
@@ -786,7 +718,6 @@ function createTrafficCone() {
     cone.castShadow = true;
     group.add(cone);
 
-    // White stripe
     const stripeGeo = new THREE.CylinderGeometry(0.25, 0.28, 0.15, 12);
     const stripeMat = new THREE.MeshStandardMaterial({
         color: 0xffffff, metalness: 0.3, roughness: 0.6
@@ -795,7 +726,6 @@ function createTrafficCone() {
     stripe.position.y = 0.5;
     group.add(stripe);
 
-    // Base
     const baseGeo = new THREE.BoxGeometry(0.8, 0.1, 0.8);
     const baseMat = new THREE.MeshStandardMaterial({
         color: 0xff5500, metalness: 0.2, roughness: 0.7
@@ -808,9 +738,6 @@ function createTrafficCone() {
     return group;
 }
 
-/* ============================================
-   FIRE HYDRANT
-   ============================================ */
 function createFireHydrant() {
     const group = new THREE.Group();
 
@@ -818,20 +745,17 @@ function createFireHydrant() {
         color: 0xcc0000, metalness: 0.6, roughness: 0.4
     });
 
-    // Body
     const bodyGeo = new THREE.CylinderGeometry(0.25, 0.3, 0.9, 12);
     const body = new THREE.Mesh(bodyGeo, redMat);
     body.position.y = 0.45;
     body.castShadow = true;
     group.add(body);
 
-    // Top dome
     const domeGeo = new THREE.SphereGeometry(0.28, 12, 12, 0, Math.PI * 2, 0, Math.PI / 2);
     const dome = new THREE.Mesh(domeGeo, redMat);
     dome.position.y = 0.9;
     group.add(dome);
 
-    // Side nozzles
     const nozzleGeo = new THREE.CylinderGeometry(0.08, 0.08, 0.15, 8);
     const nozzleL = new THREE.Mesh(nozzleGeo, redMat);
     nozzleL.rotation.z = Math.PI / 2;
@@ -843,7 +767,6 @@ function createFireHydrant() {
     nozzleR.position.set(0.28, 0.6, 0);
     group.add(nozzleR);
 
-    // Top cap
     const capGeo = new THREE.CylinderGeometry(0.1, 0.1, 0.15, 8);
     const cap = new THREE.Mesh(capGeo, redMat);
     cap.position.y = 1.05;
@@ -852,9 +775,6 @@ function createFireHydrant() {
     return group;
 }
 
-/* ============================================
-   CAR (small sedan)
-   ============================================ */
 function createCar() {
     const group = new THREE.Group();
 
@@ -865,24 +785,21 @@ function createCar() {
         color: carColor, metalness: 0.7, roughness: 0.3
     });
 
-    // Body
     const bodyGeo = new THREE.BoxGeometry(1.6, 0.6, 2.8);
     const body = new THREE.Mesh(bodyGeo, carMat);
     body.position.y = 0.5;
     body.castShadow = true;
     group.add(body);
 
-    // Cabin
     const cabinGeo = new THREE.BoxGeometry(1.4, 0.5, 1.4);
     const cabinMat = new THREE.MeshStandardMaterial({
-        color: 0x222222, metalness: 0.9, roughness: 0.1
+        color: 0x111111, metalness: 0.9, roughness: 0.1
     });
     const cabin = new THREE.Mesh(cabinGeo, cabinMat);
     cabin.position.set(0, 1.05, -0.1);
     cabin.castShadow = true;
     group.add(cabin);
 
-    // Wheels
     const wheelGeo = new THREE.CylinderGeometry(0.25, 0.25, 0.15, 12);
     const wheelMat = new THREE.MeshStandardMaterial({
         color: 0x111111, metalness: 0.5, roughness: 0.7
@@ -900,7 +817,6 @@ function createCar() {
         group.add(wheel);
     });
 
-    // Headlights
     const lightGeo = new THREE.SphereGeometry(0.12, 8, 8);
     const lightMat = new THREE.MeshBasicMaterial({ color: 0xffffaa });
 
@@ -915,19 +831,87 @@ function createCar() {
     return group;
 }
 
+/* ============================================
+   SHARINGAN ORBS (NEW COINS)
+   ============================================ */
 function spawnCoin() {
     const lane = Math.floor(Math.random() * 3);
-    const geo = new THREE.TorusGeometry(0.3, 0.1, 8, 16);
-    const mat = new THREE.MeshStandardMaterial({
-        color: 0xF1C40F, metalness: 0.8, roughness: 0.2,
-        emissive: 0xF1C40F, emissiveIntensity: 0.3
+    const group = new THREE.Group();
+
+    // Outer red glow sphere
+    const glowGeo = new THREE.SphereGeometry(0.45, 16, 16);
+    const glowMat = new THREE.MeshBasicMaterial({
+        color: 0xff0000,
+        transparent: true,
+        opacity: 0.25
     });
-    const coin = new THREE.Mesh(geo, mat);
-    coin.position.set(LANE_POSITIONS[lane], 1 + Math.random() * 2, -80);
-    coin.rotation.x = Math.PI / 2;
-    coin.castShadow = true;
-    scene.add(coin);
-    coinObjects.push(coin);
+    const glow = new THREE.Mesh(glowGeo, glowMat);
+    group.add(glow);
+
+    // Main red orb (Sharingan base)
+    const orbGeo = new THREE.SphereGeometry(0.32, 16, 16);
+    const orbMat = new THREE.MeshStandardMaterial({
+        color: 0xcc0000,
+        metalness: 0.3,
+        roughness: 0.2,
+        emissive: 0xff0000,
+        emissiveIntensity: 0.6
+    });
+    const orb = new THREE.Mesh(orbGeo, orbMat);
+    group.add(orb);
+
+    // Black pupil (inner circle)
+    const pupilGeo = new THREE.SphereGeometry(0.12, 12, 12);
+    const pupilMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
+    const pupil = new THREE.Mesh(pupilGeo, pupilMat);
+    pupil.position.z = 0.28;
+    group.add(pupil);
+
+    // Three tomoe (black commas) around the orb
+    const tomoeMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
+
+    for (let i = 0; i < 3; i++) {
+        const angle = (i / 3) * Math.PI * 2;
+
+        // Tomoe body (small sphere)
+        const tomoeGeo = new THREE.SphereGeometry(0.08, 8, 8);
+        const tomoe = new THREE.Mesh(tomoeGeo, tomoeMat);
+        tomoe.position.set(
+            Math.cos(angle) * 0.22,
+            Math.sin(angle) * 0.22,
+            0.15
+        );
+        group.add(tomoe);
+
+        // Tomoe tail (small curved cone)
+        const tailGeo = new THREE.ConeGeometry(0.04, 0.15, 6);
+        const tail = new THREE.Mesh(tailGeo, tomoeMat);
+        tail.position.set(
+            Math.cos(angle) * 0.3,
+            Math.sin(angle) * 0.3,
+            0.12
+        );
+        tail.rotation.z = angle;
+        tail.rotation.x = Math.PI / 4;
+        group.add(tail);
+    }
+
+    // White outer ring
+    const ringGeo = new THREE.TorusGeometry(0.35, 0.03, 8, 24);
+    const ringMat = new THREE.MeshStandardMaterial({
+        color: 0xffffff,
+        metalness: 0.5,
+        roughness: 0.3,
+        emissive: 0xffffff,
+        emissiveIntensity: 0.3
+    });
+    const ring = new THREE.Mesh(ringGeo, ringMat);
+    group.add(ring);
+
+    group.position.set(LANE_POSITIONS[lane], 1 + Math.random() * 2, -80);
+    group.castShadow = true;
+    scene.add(group);
+    coinObjects.push(group);
 }
 
 function updateObstacles(speed) {
@@ -959,12 +943,13 @@ function updateObstacles(speed) {
 function updateCoins(speed) {
     coinObjects = coinObjects.filter(c => {
         c.position.z += speed * 0.15;
-        c.rotation.z += 0.1;
+        c.rotation.y += 0.08;
+        c.rotation.x = Math.sin(Date.now() * 0.003) * 0.3;
 
-        if (Math.abs(c.position.z - hero.group.position.z) < 1 &&
+        if (Math.abs(c.position.z - hero.group.position.z) < 1.2 &&
             Math.abs(c.position.x - hero.group.position.x) < 1.2 &&
-            Math.abs(c.position.y - (hero.group.position.y + 0.7)) < 1.2) {
-            createParticles(c.position.x, c.position.y, c.position.z, 0xF1C40F);
+            Math.abs(c.position.y - (hero.group.position.y + 0.7)) < 1.5) {
+            createParticles(c.position.x, c.position.y, c.position.z, 0xff0000);
             scene.remove(c);
             hero.coins++;
             return false;
@@ -1012,7 +997,7 @@ function updateParticles() {
    ============================================ */
 function startGame() {
     const name = document.getElementById('player-name').value.trim() || 'Guest';
-    document.getElementById('player-id').textContent = `Hero: ${name}`;
+    document.getElementById('player-id').textContent = `Ninja: ${name}`;
     tracker = new HeroTracker(name);
     document.getElementById('streak-info').textContent = `🔥 ${tracker.loginStreak}`;
 
