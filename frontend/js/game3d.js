@@ -1,6 +1,6 @@
 /* ============================================
-   ITACHI CHASE - 3D GAME ENGINE
-   Sharingan Orbs + City Background + DDA
+   ITACHI CHASE - 3D GAME ENGINE (Bug Fixed)
+   Full replacement file
    ============================================ */
 let scene, camera, renderer;
 let currentLane = 1;
@@ -90,7 +90,7 @@ function initThreeJS() {
 }
 
 /* ============================================
-   SKY - Stars + Blood Moon (Itachi theme)
+   SKY
    ============================================ */
 function createSky() {
     const starsGeo = new THREE.BufferGeometry();
@@ -115,14 +115,12 @@ function createSky() {
     const stars = new THREE.Points(starsGeo, starsMat);
     scene.add(stars);
 
-    // Blood red moon
     const moonGeo = new THREE.SphereGeometry(7, 32, 32);
     const moonMat = new THREE.MeshBasicMaterial({ color: 0xdd2020 });
     const moon = new THREE.Mesh(moonGeo, moonMat);
     moon.position.set(25, 40, -120);
     scene.add(moon);
 
-    // Moon glow
     const glowGeo = new THREE.SphereGeometry(9, 32, 32);
     const glowMat = new THREE.MeshBasicMaterial({
         color: 0xff4040, transparent: true, opacity: 0.2
@@ -160,7 +158,6 @@ function createGround() {
     sidewalkR.position.set(-1, 0, -100);
     scene.add(sidewalkR);
 
-    // Neon red edges
     const edgeMat = new THREE.MeshBasicMaterial({ color: 0xff0040 });
     for (let i = 0; i < 60; i++) {
         const edgeGeo = new THREE.PlaneGeometry(0.1, 2);
@@ -302,7 +299,7 @@ function createRoad() {
 }
 
 /* ============================================
-   STREET LIGHTS (with red glow)
+   STREET LIGHTS
    ============================================ */
 function createStreetLights() {
     for (let i = 0; i < 20; i++) {
@@ -530,6 +527,69 @@ function animateHeroToLane() {
         if (progress < 1) requestAnimationFrame(step);
     }
     step();
+}
+
+/* ============================================
+   BUG FIX: CLEAN SCENE COMPLETELY
+   Removes all obstacles, coins, particles
+   ============================================ */
+function cleanupGameObjects() {
+    // Remove and dispose all obstacles
+    obstacles.forEach(o => {
+        scene.remove(o);
+        o.traverse(child => {
+            if (child.geometry) child.geometry.dispose();
+            if (child.material) {
+                if (Array.isArray(child.material)) {
+                    child.material.forEach(m => m.dispose());
+                } else {
+                    child.material.dispose();
+                }
+            }
+        });
+    });
+
+    // Remove and dispose all coins
+    coinObjects.forEach(c => {
+        scene.remove(c);
+        c.traverse(child => {
+            if (child.geometry) child.geometry.dispose();
+            if (child.material) {
+                if (Array.isArray(child.material)) {
+                    child.material.forEach(m => m.dispose());
+                } else {
+                    child.material.dispose();
+                }
+            }
+        });
+    });
+
+    // Remove and dispose all particles
+    particles.forEach(p => {
+        scene.remove(p);
+        if (p.geometry) p.geometry.dispose();
+        if (p.material) p.material.dispose();
+    });
+
+    // Clear arrays
+    obstacles = [];
+    coinObjects = [];
+    particles = [];
+
+    // Remove old hero
+    if (hero && hero.group) {
+        scene.remove(hero.group);
+        hero.group.traverse(child => {
+            if (child.geometry) child.geometry.dispose();
+            if (child.material) {
+                if (Array.isArray(child.material)) {
+                    child.material.forEach(m => m.dispose());
+                } else {
+                    child.material.dispose();
+                }
+            }
+        });
+    }
 }
 
 /* ============================================
@@ -796,364 +856,4 @@ function createCar() {
         color: 0x111111, metalness: 0.9, roughness: 0.1
     });
     const cabin = new THREE.Mesh(cabinGeo, cabinMat);
-    cabin.position.set(0, 1.05, -0.1);
-    cabin.castShadow = true;
-    group.add(cabin);
-
-    const wheelGeo = new THREE.CylinderGeometry(0.25, 0.25, 0.15, 12);
-    const wheelMat = new THREE.MeshStandardMaterial({
-        color: 0x111111, metalness: 0.5, roughness: 0.7
-    });
-
-    const wheelPositions = [
-        [-0.85, 0.25, 1], [0.85, 0.25, 1],
-        [-0.85, 0.25, -1], [0.85, 0.25, -1]
-    ];
-
-    wheelPositions.forEach(pos => {
-        const wheel = new THREE.Mesh(wheelGeo, wheelMat);
-        wheel.rotation.z = Math.PI / 2;
-        wheel.position.set(pos[0], pos[1], pos[2]);
-        group.add(wheel);
-    });
-
-    const lightGeo = new THREE.SphereGeometry(0.12, 8, 8);
-    const lightMat = new THREE.MeshBasicMaterial({ color: 0xffffaa });
-
-    const lightL = new THREE.Mesh(lightGeo, lightMat);
-    lightL.position.set(-0.5, 0.5, 1.41);
-    group.add(lightL);
-
-    const lightR = new THREE.Mesh(lightGeo, lightMat);
-    lightR.position.set(0.5, 0.5, 1.41);
-    group.add(lightR);
-
-    return group;
-}
-
-/* ============================================
-   SHARINGAN ORBS (NEW COINS)
-   ============================================ */
-function spawnCoin() {
-    const lane = Math.floor(Math.random() * 3);
-    const group = new THREE.Group();
-
-    // Outer red glow sphere
-    const glowGeo = new THREE.SphereGeometry(0.45, 16, 16);
-    const glowMat = new THREE.MeshBasicMaterial({
-        color: 0xff0000,
-        transparent: true,
-        opacity: 0.25
-    });
-    const glow = new THREE.Mesh(glowGeo, glowMat);
-    group.add(glow);
-
-    // Main red orb (Sharingan base)
-    const orbGeo = new THREE.SphereGeometry(0.32, 16, 16);
-    const orbMat = new THREE.MeshStandardMaterial({
-        color: 0xcc0000,
-        metalness: 0.3,
-        roughness: 0.2,
-        emissive: 0xff0000,
-        emissiveIntensity: 0.6
-    });
-    const orb = new THREE.Mesh(orbGeo, orbMat);
-    group.add(orb);
-
-    // Black pupil (inner circle)
-    const pupilGeo = new THREE.SphereGeometry(0.12, 12, 12);
-    const pupilMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
-    const pupil = new THREE.Mesh(pupilGeo, pupilMat);
-    pupil.position.z = 0.28;
-    group.add(pupil);
-
-    // Three tomoe (black commas) around the orb
-    const tomoeMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
-
-    for (let i = 0; i < 3; i++) {
-        const angle = (i / 3) * Math.PI * 2;
-
-        // Tomoe body (small sphere)
-        const tomoeGeo = new THREE.SphereGeometry(0.08, 8, 8);
-        const tomoe = new THREE.Mesh(tomoeGeo, tomoeMat);
-        tomoe.position.set(
-            Math.cos(angle) * 0.22,
-            Math.sin(angle) * 0.22,
-            0.15
-        );
-        group.add(tomoe);
-
-        // Tomoe tail (small curved cone)
-        const tailGeo = new THREE.ConeGeometry(0.04, 0.15, 6);
-        const tail = new THREE.Mesh(tailGeo, tomoeMat);
-        tail.position.set(
-            Math.cos(angle) * 0.3,
-            Math.sin(angle) * 0.3,
-            0.12
-        );
-        tail.rotation.z = angle;
-        tail.rotation.x = Math.PI / 4;
-        group.add(tail);
-    }
-
-    // White outer ring
-    const ringGeo = new THREE.TorusGeometry(0.35, 0.03, 8, 24);
-    const ringMat = new THREE.MeshStandardMaterial({
-        color: 0xffffff,
-        metalness: 0.5,
-        roughness: 0.3,
-        emissive: 0xffffff,
-        emissiveIntensity: 0.3
-    });
-    const ring = new THREE.Mesh(ringGeo, ringMat);
-    group.add(ring);
-
-    group.position.set(LANE_POSITIONS[lane], 1 + Math.random() * 2, -80);
-    group.castShadow = true;
-    scene.add(group);
-    coinObjects.push(group);
-}
-
-function updateObstacles(speed) {
-    obstacles = obstacles.filter(o => {
-        o.position.z += speed * 0.15;
-
-        if (Math.abs(o.position.z - hero.group.position.z) < 1.2 &&
-            Math.abs(o.position.x - hero.group.position.x) < 1.2 &&
-            hero.y < 1.5) {
-            if (hero.isInvincible || hero.hasShield || hero.canDestroyObstacles || autoDefeatVillains) {
-                createParticles(o.position.x, o.position.y, o.position.z, 0xE67E22);
-                scene.remove(o);
-                if (tracker) tracker.trackVillainDefeat();
-                return false;
-            } else {
-                endGame();
-                return false;
-            }
-        }
-
-        if (o.position.z > 15) {
-            scene.remove(o);
-            return false;
-        }
-        return true;
-    });
-}
-
-function updateCoins(speed) {
-    coinObjects = coinObjects.filter(c => {
-        c.position.z += speed * 0.15;
-        c.rotation.y += 0.08;
-        c.rotation.x = Math.sin(Date.now() * 0.003) * 0.3;
-
-        if (Math.abs(c.position.z - hero.group.position.z) < 1.2 &&
-            Math.abs(c.position.x - hero.group.position.x) < 1.2 &&
-            Math.abs(c.position.y - (hero.group.position.y + 0.7)) < 1.5) {
-            createParticles(c.position.x, c.position.y, c.position.z, 0xff0000);
-            scene.remove(c);
-            hero.coins++;
-            return false;
-        }
-        if (c.position.z > 15) {
-            scene.remove(c);
-            return false;
-        }
-        return true;
-    });
-}
-
-function createParticles(x, y, z, color) {
-    for (let i = 0; i < 10; i++) {
-        const geo = new THREE.SphereGeometry(0.1, 6, 6);
-        const mat = new THREE.MeshBasicMaterial({ color: color });
-        const p = new THREE.Mesh(geo, mat);
-        p.position.set(x, y, z);
-        p.userData.velocity = new THREE.Vector3(
-            (Math.random() - 0.5) * 0.2,
-            Math.random() * 0.2,
-            (Math.random() - 0.5) * 0.2
-        );
-        p.userData.life = 30;
-        scene.add(p);
-        particles.push(p);
-    }
-}
-
-function updateParticles() {
-    particles = particles.filter(p => {
-        p.position.add(p.userData.velocity);
-        p.userData.life--;
-        p.scale.setScalar(p.userData.life / 30);
-        if (p.userData.life <= 0) {
-            scene.remove(p);
-            return false;
-        }
-        return true;
-    });
-}
-
-/* ============================================
-   GAME CONTROLS
-   ============================================ */
-function startGame() {
-    const name = document.getElementById('player-name').value.trim() || 'Guest';
-    document.getElementById('player-id').textContent = `Ninja: ${name}`;
-    tracker = new HeroTracker(name);
-    document.getElementById('streak-info').textContent = `🔥 ${tracker.loginStreak}`;
-
-    document.getElementById('start-screen').classList.add('hidden');
-
-    if (hero) scene.remove(hero.group);
-    obstacles.forEach(o => scene.remove(o));
-    coinObjects.forEach(c => scene.remove(c));
-    particles.forEach(p => scene.remove(p));
-    obstacles = [];
-    coinObjects = [];
-    particles = [];
-
-    hero = new Hero3D(scene);
-    currentLane = 1;
-    hero.group.position.x = LANE_POSITIONS[1];
-
-    camera.position.x = LANE_POSITIONS[1];
-    camera.lookAt(LANE_POSITIONS[1], 1.2, -20);
-
-    baseSpeed = 2.5;
-    gameSpeed = 2.5;
-    obstacleSpawnRate = 0.015;
-    coinSpawnRate = 0.03;
-    timeScale = 1.0;
-    autoDefeatVillains = false;
-    ddaMode = 'Normal';
-    lastDDACheck = Date.now();
-    updateDDAIndicator(ddaMode);
-
-    isPlaying = true;
-    isGameOver = false;
-}
-
-function endGame() {
-    isPlaying = false;
-    isGameOver = true;
-
-    if (tracker) {
-        tracker.recordDeath(hero.distance);
-        tracker.endSession();
-    }
-
-    document.getElementById('final-distance').textContent = Math.floor(hero.distance) + 'm';
-    document.getElementById('final-score').textContent = Math.floor(hero.distance / 10);
-    document.getElementById('final-coins').textContent = hero.coins;
-    document.getElementById('final-powers').textContent = hero.powers.length;
-    document.getElementById('game-over-screen').classList.remove('hidden');
-}
-
-function restartGame() {
-    document.getElementById('game-over-screen').classList.add('hidden');
-    startGame();
-}
-
-function activateBestPower() {
-    if (!hero || hero.activePower || hero.powers.length === 0) return;
-    const priority = ['hero_mode', 'lightning_storm', 'ice_time', 'fire_dash', 'force_field', 'super_speed'];
-    for (const p of priority) {
-        if (hero.powers.includes(p)) {
-            hero.activatePower(p);
-            showToast(`${POWERS[p].icon} ${POWERS[p].name} activated!`);
-            break;
-        }
-    }
-}
-
-/* ============================================
-   EVENT LISTENERS
-   ============================================ */
-document.addEventListener('DOMContentLoaded', () => {
-    initThreeJS();
-
-    document.getElementById('start-btn').addEventListener('click', startGame);
-    document.getElementById('restart-btn').addEventListener('click', restartGame);
-
-    document.getElementById('jump-btn').addEventListener('touchstart', (e) => {
-        e.preventDefault(); if (hero) hero.jump();
-    });
-    document.getElementById('slide-btn').addEventListener('touchstart', (e) => {
-        e.preventDefault(); if (hero) hero.slide();
-    });
-    document.getElementById('btn-left').addEventListener('touchstart', (e) => {
-        e.preventDefault(); moveLeft();
-    });
-    document.getElementById('btn-right').addEventListener('touchstart', (e) => {
-        e.preventDefault(); moveRight();
-    });
-    document.getElementById('power-btn').addEventListener('touchstart', (e) => {
-        e.preventDefault(); activateBestPower();
-    });
-
-    document.getElementById('jump-btn').addEventListener('click', () => hero && hero.jump());
-    document.getElementById('slide-btn').addEventListener('click', () => hero && hero.slide());
-    document.getElementById('btn-left').addEventListener('click', moveLeft);
-    document.getElementById('btn-right').addEventListener('click', moveRight);
-    document.getElementById('power-btn').addEventListener('click', activateBestPower);
-
-    const jd = document.getElementById('jump-btn-desk');
-    const sd = document.getElementById('slide-btn-desk');
-    const pd = document.getElementById('power-btn-desk');
-    if (jd) jd.addEventListener('click', () => hero && hero.jump());
-    if (sd) sd.addEventListener('click', () => hero && hero.slide());
-    if (pd) pd.addEventListener('click', activateBestPower);
-
-    document.getElementById('claim-btn').addEventListener('click', () => {
-        document.getElementById('retention-offer').classList.add('hidden');
-        showToast('🎁 Reward claimed! Run again tomorrow!');
-    });
-    document.getElementById('dismiss-btn').addEventListener('click', () => {
-        document.getElementById('retention-offer').classList.add('hidden');
-    });
-
-    const gameContainer = document.getElementById('game-container');
-
-    gameContainer.addEventListener('touchstart', (e) => {
-        touchStartX = e.changedTouches[0].screenX;
-        touchStartY = e.changedTouches[0].screenY;
-        touchStartTime = Date.now();
-    }, { passive: true });
-
-    gameContainer.addEventListener('touchend', (e) => {
-        if (!isPlaying || !hero) return;
-        const deltaX = e.changedTouches[0].screenX - touchStartX;
-        const deltaY = e.changedTouches[0].screenY - touchStartY;
-        const deltaTime = Date.now() - touchStartTime;
-
-        if (deltaTime > 600) return;
-        const minSwipe = 40;
-
-        if (Math.abs(deltaX) > Math.abs(deltaY)) {
-            if (Math.abs(deltaX) < minSwipe) return;
-            if (deltaX > 0) moveRight();
-            else moveLeft();
-        } else {
-            if (Math.abs(deltaY) < minSwipe) return;
-            if (deltaY < 0) hero.jump();
-            else hero.slide();
-        }
-    }, { passive: true });
-
-    document.addEventListener('keydown', (e) => {
-        if (e.code === 'Space') { e.preventDefault(); if (isPlaying && hero) hero.jump(); }
-        if (e.code === 'KeyS') { e.preventDefault(); if (isPlaying && hero) hero.slide(); }
-        if (e.code === 'KeyF') { e.preventDefault(); if (isPlaying) activateBestPower(); }
-        if (e.code === 'ArrowLeft' || e.code === 'KeyA') { e.preventDefault(); if (isPlaying) moveLeft(); }
-        if (e.code === 'ArrowRight' || e.code === 'KeyD') { e.preventDefault(); if (isPlaying) moveRight(); }
-    });
-
-    window.addEventListener('resize', () => {
-        if (!renderer || !camera) return;
-        const container = document.getElementById('canvas-container');
-        const width = container.clientWidth;
-        const height = container.clientHeight;
-        camera.aspect = width / height;
-        camera.updateProjectionMatrix();
-        renderer.setSize(width, height);
-    });
-});
+    cabin.position.set(0,
