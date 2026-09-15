@@ -1,5 +1,5 @@
 /* ============================================
-   3D GAME ENGINE + DDA
+   3D GAME ENGINE + DDA + STRAIGHT CAMERA
    ============================================ */
 let scene, camera, renderer;
 let currentLane = 1;
@@ -17,9 +17,9 @@ let coinSpawnRate = 0.03;
 
 // DDA variables
 let ddaEnabled = true;
-let ddaCheckInterval = 2000; // check every 2 seconds
+let ddaCheckInterval = 2000;
 let lastDDACheck = 0;
-let currentDifficulty = 'Normal'; // Easy, Normal, Hard
+let currentDifficulty = 'Normal';
 let ddaMode = 'Normal';
 
 let autoDefeatVillains = false;
@@ -41,11 +41,14 @@ function initThreeJS() {
     const height = container.clientHeight;
 
     scene = new THREE.Scene();
-    scene.fog = new THREE.Fog(0x1a1a3e, 20, 80);
+    scene.fog = new THREE.Fog(0x1a1a3e, 30, 120);
 
-    camera = new THREE.PerspectiveCamera(60, width / height, 0.1, 200);
-    camera.position.set(0, 4, 10);
-    camera.lookAt(0, 1, 0);
+    // ============================================
+    // STRAIGHT CAMERA - Looking down the road
+    // ============================================
+    camera = new THREE.PerspectiveCamera(55, width / height, 0.1, 200);
+    camera.position.set(-6, 3, 6);
+    camera.lookAt(-6, 1.2, -20);
 
     renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(width, height);
@@ -54,16 +57,16 @@ function initThreeJS() {
     renderer.shadowMap.enabled = true;
     container.appendChild(renderer.domElement);
 
-    const ambientLight = new THREE.AmbientLight(0x404080, 0.8);
+    const ambientLight = new THREE.AmbientLight(0x5050a0, 0.9);
     scene.add(ambientLight);
 
     const dirLight = new THREE.DirectionalLight(0xffffff, 1);
-    dirLight.position.set(5, 10, 5);
+    dirLight.position.set(5, 15, 5);
     dirLight.castShadow = true;
     scene.add(dirLight);
 
-    const backLight = new THREE.PointLight(0x00b8b8, 0.8, 30);
-    backLight.position.set(-5, 3, -5);
+    const backLight = new THREE.PointLight(0x00b8b8, 1, 40);
+    backLight.position.set(-6, 5, -10);
     scene.add(backLight);
 
     createRoad();
@@ -77,57 +80,81 @@ function initThreeJS() {
 }
 
 function createRoad() {
-    const roadGeo = new THREE.PlaneGeometry(8, 200);
+    const roadGeo = new THREE.PlaneGeometry(14, 300);
     const roadMat = new THREE.MeshStandardMaterial({
         color: 0x2d2d2d, metalness: 0.3, roughness: 0.8
     });
     const road = new THREE.Mesh(roadGeo, roadMat);
     road.rotation.x = -Math.PI / 2;
-    road.position.set(-6, 0, -50);
+    road.position.set(-6, 0, -100);
     road.receiveShadow = true;
     scene.add(road);
 
-    for (let i = 0; i < 50; i++) {
-        const lineGeo = new THREE.PlaneGeometry(0.3, 2);
-        const lineMat = new THREE.MeshBasicMaterial({ color: 0x00b8b8 });
-        const line = new THREE.Mesh(lineGeo, lineMat);
-        line.rotation.x = -Math.PI / 2;
-        line.position.set(-6, 0.01, -i * 4 + 20);
-        scene.add(line);
-        road.userData.lines = road.userData.lines || [];
-        road.userData.lines.push(line);
+    // Lane divider lines
+    for (let lane = 0; lane < 3; lane++) {
+        for (let i = 0; i < 60; i++) {
+            const lineGeo = new THREE.PlaneGeometry(0.15, 2);
+            const lineMat = new THREE.MeshBasicMaterial({ color: 0x00b8b8 });
+            const line = new THREE.Mesh(lineGeo, lineMat);
+            line.rotation.x = -Math.PI / 2;
+            line.position.set(LANE_POSITIONS[lane] - 1, 0.01, -i * 4 + 20);
+            scene.add(line);
+            if (!road.userData.lines) road.userData.lines = [];
+            road.userData.lines.push(line);
+        }
     }
+
+    // Edge lines
+    for (let i = 0; i < 60; i++) {
+        const edgeGeo = new THREE.PlaneGeometry(0.2, 2);
+        const edgeMat = new THREE.MeshBasicMaterial({ color: 0xffcc00 });
+        const edgeL = new THREE.Mesh(edgeGeo, edgeMat);
+        edgeL.rotation.x = -Math.PI / 2;
+        edgeL.position.set(-9, 0.01, -i * 4 + 20);
+        scene.add(edgeL);
+
+        const edgeR = new THREE.Mesh(edgeGeo, edgeMat);
+        edgeR.rotation.x = -Math.PI / 2;
+        edgeR.position.set(-3, 0.01, -i * 4 + 20);
+        scene.add(edgeR);
+
+        if (!road.userData.lines) road.userData.lines = [];
+        road.userData.lines.push(edgeL, edgeR);
+    }
+
     scene.userData.road = road;
 }
 
 function createBuildings() {
     const buildingColors = [0x2a2a4a, 0x3a3a5a, 0x1a1a3a];
-    for (let i = 0; i < 20; i++) {
-        const height = 5 + Math.random() * 15;
-        const geo = new THREE.BoxGeometry(3, height, 3);
+    for (let i = 0; i < 30; i++) {
+        const height = 8 + Math.random() * 20;
+        const geo = new THREE.BoxGeometry(4, height, 4);
         const mat = new THREE.MeshStandardMaterial({
             color: buildingColors[i % 3], metalness: 0.3, roughness: 0.7
         });
         const building = new THREE.Mesh(geo, mat);
+        const side = i % 2 === 0 ? 1 : -1;
         building.position.set(
-            (Math.random() > 0.5 ? 1 : -1) * (10 + Math.random() * 5),
+            -6 + side * (14 + Math.random() * 8),
             height / 2,
-            -i * 10 - 10
+            -i * 12 - 10
         );
         building.castShadow = true;
         scene.add(building);
 
-        for (let w = 0; w < 5; w++) {
-            const winGeo = new THREE.PlaneGeometry(0.4, 0.6);
+        for (let w = 0; w < 8; w++) {
+            const winGeo = new THREE.PlaneGeometry(0.5, 0.7);
             const winMat = new THREE.MeshBasicMaterial({
                 color: Math.random() > 0.5 ? 0xf1c40f : 0x3498db
             });
             const win = new THREE.Mesh(winGeo, winMat);
             win.position.set(
-                building.position.x + (Math.random() - 0.5) * 2,
-                Math.random() * height + 1,
-                building.position.z + 1.51
+                building.position.x + (Math.random() - 0.5) * 3,
+                Math.random() * height + 2,
+                building.position.z + side * 2.01
             );
+            if (side === 1) win.rotation.y = Math.PI;
             scene.add(win);
         }
     }
@@ -146,23 +173,20 @@ function evaluateDDA() {
     const state = tracker.getDDAState();
     const previousMode = ddaMode;
 
-    // Determine DDA mode
     if (state.consecutiveDeaths >= 3) {
-        ddaMode = 'Mercy';      // Player keeps dying → make it very easy
+        ddaMode = 'Mercy';
     } else if (state.isStruggling) {
-        ddaMode = 'Easy';       // Player struggling → ease up
+        ddaMode = 'Easy';
     } else if (state.isBored) {
-        ddaMode = 'Challenge';  // Player bored → spice it up
+        ddaMode = 'Challenge';
     } else if (state.isDoingWell && state.distance > 2000) {
-        ddaMode = 'Hard';       // Player skilled → challenge them
+        ddaMode = 'Hard';
     } else {
-        ddaMode = 'Normal';     // Default
+        ddaMode = 'Normal';
     }
 
-    // Apply DDA settings
     applyDDAMode(ddaMode);
 
-    // Notify player if mode changed
     if (previousMode !== ddaMode && (ddaMode === 'Mercy' || ddaMode === 'Easy')) {
         if (typeof showToast === 'function') {
             showToast(`💙 ${ddaMode} Mode: Taking it easy!`);
@@ -182,31 +206,27 @@ function applyDDAMode(mode) {
         case 'Mercy':
             gameSpeed = Math.max(1.5, baseSpeed * 0.6);
             obstacleSpawnRate = 0.008;
-            coinSpawnRate = 0.06;   // More coins to reward
+            coinSpawnRate = 0.06;
             currentDifficulty = 'Very Easy';
             break;
-
         case 'Easy':
             gameSpeed = Math.max(1.8, baseSpeed * 0.75);
             obstacleSpawnRate = 0.011;
             coinSpawnRate = 0.045;
             currentDifficulty = 'Easy';
             break;
-
         case 'Normal':
             gameSpeed = baseSpeed;
             obstacleSpawnRate = 0.015;
             coinSpawnRate = 0.03;
             currentDifficulty = 'Normal';
             break;
-
         case 'Challenge':
             gameSpeed = Math.min(4.0, baseSpeed * 1.15);
             obstacleSpawnRate = 0.02;
             coinSpawnRate = 0.025;
             currentDifficulty = 'Challenge';
             break;
-
         case 'Hard':
             gameSpeed = Math.min(5.0, baseSpeed * 1.3);
             obstacleSpawnRate = 0.025;
@@ -223,7 +243,7 @@ function updateDDAIndicator(mode) {
         el.id = 'dda-indicator';
         el.style.cssText = `
             position: absolute;
-            top: 110px;
+            top: 115px;
             left: 10px;
             padding: 5px 12px;
             background: rgba(13,43,78,0.85);
@@ -234,6 +254,7 @@ function updateDDAIndicator(mode) {
             font-weight: bold;
             z-index: 10;
             backdrop-filter: blur(10px);
+            animation: pulse 2s infinite;
         `;
         document.getElementById('game-container').appendChild(el);
     }
@@ -310,6 +331,13 @@ function animate() {
 
     hero.update(effectiveSpeed);
 
+    // ============================================
+    // CAMERA FOLLOWS HERO'S LANE
+    // ============================================
+    const targetCamX = hero.group.position.x;
+    camera.position.x += (targetCamX - camera.position.x) * 0.08;
+    camera.lookAt(hero.group.position.x, 1.2, -20);
+
     document.getElementById('distance').textContent = Math.floor(hero.distance) + 'm';
     document.getElementById('score').textContent = Math.floor(hero.distance / 10);
     document.getElementById('coins').textContent = hero.coins;
@@ -323,10 +351,8 @@ function animate() {
         tracker.updateCoins(hero.coins);
     }
 
-    // DDA EVALUATION
     evaluateDDA();
 
-    // Adaptive spawn rates
     if (Math.random() < obstacleSpawnRate) spawnObstacle();
     if (Math.random() < coinSpawnRate) spawnCoin();
 
@@ -339,7 +365,7 @@ function animate() {
     if (road && road.userData.lines) {
         road.userData.lines.forEach((line, i) => {
             line.position.z = -i * 4 + 20 + (roadOffset * 10) % 4;
-            if (line.position.z > 20) line.position.z -= 200;
+            if (line.position.z > 20) line.position.z -= 240;
         });
     }
 
@@ -353,7 +379,7 @@ function spawnObstacle() {
     const geo = new THREE.BoxGeometry(1, 1.5, 1);
     const mat = new THREE.MeshStandardMaterial({ color: 0x8E44AD, metalness: 0.4 });
     const villain = new THREE.Mesh(geo, mat);
-    villain.position.set(LANE_POSITIONS[lane], 0.75, -60);
+    villain.position.set(LANE_POSITIONS[lane], 0.75, -80);
     villain.castShadow = true;
     villain.userData.lane = lane;
     scene.add(villain);
@@ -377,7 +403,7 @@ function spawnCoin() {
         color: 0xF1C40F, metalness: 0.8, roughness: 0.2
     });
     const coin = new THREE.Mesh(geo, mat);
-    coin.position.set(LANE_POSITIONS[lane], 1 + Math.random() * 2, -60);
+    coin.position.set(LANE_POSITIONS[lane], 1 + Math.random() * 2, -80);
     coin.rotation.x = Math.PI / 2;
     coin.castShadow = true;
     scene.add(coin);
@@ -402,7 +428,7 @@ function updateObstacles(speed) {
             }
         }
 
-        if (o.position.z > 10) {
+        if (o.position.z > 15) {
             scene.remove(o);
             return false;
         }
@@ -423,7 +449,7 @@ function updateCoins(speed) {
             hero.coins++;
             return false;
         }
-        if (c.position.z > 10) {
+        if (c.position.z > 15) {
             scene.remove(c);
             return false;
         }
@@ -484,7 +510,10 @@ function startGame() {
     currentLane = 1;
     hero.group.position.x = LANE_POSITIONS[1];
 
-    // Reset DDA
+    // Reset camera to lane 1
+    camera.position.x = LANE_POSITIONS[1];
+    camera.lookAt(LANE_POSITIONS[1], 1.2, -20);
+
     baseSpeed = 2.5;
     gameSpeed = 2.5;
     obstacleSpawnRate = 0.015;
@@ -503,7 +532,6 @@ function endGame() {
     isPlaying = false;
     isGameOver = true;
 
-    // DDA: Record death for difficulty adjustment
     if (tracker) {
         tracker.recordDeath(hero.distance);
         tracker.endSession();
