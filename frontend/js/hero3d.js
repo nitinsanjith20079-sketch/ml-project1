@@ -1,6 +1,3 @@
-/* ============================================
-   3D HERO CHARACTER
-   ============================================ */
 class Hero3D {
     constructor(scene) {
         this.scene = scene;
@@ -11,7 +8,6 @@ class Hero3D {
     createModel() {
         this.group = new THREE.Group();
 
-        // Body (cape + torso)
         const bodyGeo = new THREE.BoxGeometry(1, 1.2, 0.6);
         const bodyMat = new THREE.MeshStandardMaterial({
             color: 0xE74C3C, metalness: 0.3, roughness: 0.6
@@ -21,7 +17,6 @@ class Hero3D {
         this.body.castShadow = true;
         this.group.add(this.body);
 
-        // Head
         const headGeo = new THREE.SphereGeometry(0.35, 16, 16);
         const headMat = new THREE.MeshStandardMaterial({
             color: 0xF39C12, metalness: 0.2, roughness: 0.7
@@ -31,14 +26,12 @@ class Hero3D {
         this.head.castShadow = true;
         this.group.add(this.head);
 
-        // Mask
         const maskGeo = new THREE.BoxGeometry(0.5, 0.15, 0.4);
         const maskMat = new THREE.MeshStandardMaterial({ color: 0x2C3E50 });
         this.mask = new THREE.Mesh(maskGeo, maskMat);
         this.mask.position.set(0, 1.55, 0.15);
         this.group.add(this.mask);
 
-        // Cape
         const capeGeo = new THREE.PlaneGeometry(0.9, 1.3);
         const capeMat = new THREE.MeshStandardMaterial({
             color: 0xC0392B, side: THREE.DoubleSide, metalness: 0.2, roughness: 0.8
@@ -48,7 +41,6 @@ class Hero3D {
         this.cape.rotation.x = 0.2;
         this.group.add(this.cape);
 
-        // Arms
         const armGeo = new THREE.BoxGeometry(0.2, 0.7, 0.2);
         const armMat = new THREE.MeshStandardMaterial({ color: 0xE74C3C });
 
@@ -60,7 +52,6 @@ class Hero3D {
         this.rightArm.position.set(0.65, 0.7, 0);
         this.group.add(this.rightArm);
 
-        // Legs
         const legGeo = new THREE.BoxGeometry(0.25, 0.7, 0.25);
         const legMat = new THREE.MeshStandardMaterial({ color: 0x2C3E50 });
 
@@ -72,7 +63,6 @@ class Hero3D {
         this.rightLeg.position.set(0.2, -0.35, 0);
         this.group.add(this.rightLeg);
 
-        // Power aura (initially invisible)
         const auraGeo = new THREE.SphereGeometry(1.2, 32, 32);
         const auraMat = new THREE.MeshBasicMaterial({
             color: 0xF1C40F, transparent: true, opacity: 0, wireframe: true
@@ -89,8 +79,9 @@ class Hero3D {
         this.x = -6;
         this.y = 0;
         this.velocityY = 0;
-        this.gravity = -0.025;
-        this.jumpPower = 0.4;
+        // SLOWER gravity + jump
+        this.gravity = -0.018;
+        this.jumpPower = 0.32;
         this.isJumping = false;
         this.isSliding = false;
         this.isInvincible = false;
@@ -132,45 +123,37 @@ class Hero3D {
     }
 
     update(gameSpeed) {
-        // Apply gravity
         this.velocityY += this.gravity;
         this.y += this.velocityY;
 
-        // Ground collision
         if (this.y <= 0) {
             this.y = 0;
             this.velocityY = 0;
             this.isJumping = false;
         }
 
-        // Update position
         this.group.position.y = this.y;
-
-        // Update distance
         this.distance += gameSpeed;
 
-        // Running animation
-        const runCycle = this.distance * 0.1;
-        this.leftLeg.rotation.x = Math.sin(runCycle) * 0.5;
-        this.rightLeg.rotation.x = Math.sin(runCycle + Math.PI) * 0.5;
-        this.leftArm.rotation.x = Math.sin(runCycle + Math.PI) * 0.4;
-        this.rightArm.rotation.x = Math.sin(runCycle) * 0.4;
+        // SLOWER run animation
+        const runCycle = this.distance * 0.06;
+        this.leftLeg.rotation.x = Math.sin(runCycle) * 0.4;
+        this.rightLeg.rotation.x = Math.sin(runCycle + Math.PI) * 0.4;
+        this.leftArm.rotation.x = Math.sin(runCycle + Math.PI) * 0.3;
+        this.rightArm.rotation.x = Math.sin(runCycle) * 0.3;
 
-        // Cape flap
-        this.cape.rotation.x = 0.2 + Math.sin(runCycle * 2) * 0.15;
+        this.cape.rotation.x = 0.2 + Math.sin(runCycle * 2) * 0.12;
 
-        // Update power timer
         if (this.activePower) {
             this.powerTimer--;
             if (this.powerTimer <= 0) {
                 this.deactivatePower();
             } else {
                 this.aura.material.opacity = 0.3 + Math.sin(Date.now() * 0.01) * 0.2;
-                this.aura.rotation.y += 0.05;
+                this.aura.rotation.y += 0.03;
             }
         }
 
-        // Check power unlocks
         this.checkPowerUnlocks();
     }
 
