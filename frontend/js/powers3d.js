@@ -1,11 +1,8 @@
-/* ============================================
-   3D POWERS SYSTEM
-   ============================================ */
 const POWERS = {
     super_speed: {
         name: 'Super Speed', icon: '⚡', color: 0xF1C40F, duration: 300,
-        effect: () => { gameSpeed *= 2; hero.isInvincible = true; },
-        removeEffect: () => { gameSpeed /= 2; hero.isInvincible = false; }
+        effect: () => { gameSpeed *= 1.6; hero.isInvincible = true; },
+        removeEffect: () => { gameSpeed /= 1.6; hero.isInvincible = false; }
     },
     force_field: {
         name: 'Force Field', icon: '🛡️', color: 0x3498DB, duration: 300,
@@ -19,7 +16,7 @@ const POWERS = {
     },
     ice_time: {
         name: 'Ice Time', icon: '❄️', color: 0x85C1E9, duration: 300,
-        effect: () => { timeScale = 0.5; },
+        effect: () => { timeScale = 0.6; },
         removeEffect: () => { timeScale = 1.0; }
     },
     lightning_storm: {
