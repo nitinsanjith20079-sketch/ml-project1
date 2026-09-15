@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🦸 HERO RUNNER 3D</title>
+<link rel="stylesheet" href="css/style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+
+<div id="game-container">
+    <!-- Header -->
+    <header id="game-header">
+        <div class="logo">🦸 HERO RUNNER 3D</div>
+        <div class="player-info">
+            <span id="player-id">Hero: Guest</span>
+            <span id="streak-info">🔥 Streak: 0</span>
+        </div>
+    </header>
+
+    <!-- 3D Canvas -->
+    <div id="canvas-container"></div>
+
+    <!-- HUD -->
+    <div id="hud">
+        <div class="hud-item">
+            <span class="hud-label">Distance</span>
+            <span class="hud-value" id="distance">0m</span>
+        </div>
+        <div class="hud-item">
+            <span class="hud-label">Score</span>
+            <span class="hud-value" id="score">0</span>
+        </div>
+        <div class="hud-item">
+            <span class="hud-label">Coins</span>
+            <span class="hud-value" id="coins">0</span>
+        </div>
+        <div class="hud-item">
+            <span class="hud-label">Powers</span>
+            <span class="hud-value" id="powers-count">0</span>
+        </div>
+    </div>
+
+    <!-- Power Progress Bar -->
+    <div id="power-progress">
+        <div class="progress-label">Next Power Unlock</div>
+        <div class="progress-bar">
+            <div class="progress-fill" id="power-progress-fill"></div>
+        </div>
+        <div class="progress-text" id="power-progress-text">500m to go</div>
+    </div>
+
+    <!-- Active Powers -->
+    <div id="active-powers"></div>
+
+    <!-- Controls -->
+    <div id="controls">
+        <button id="jump-btn" class="control-btn">⬆️ Jump</button>
+        <button id="slide-btn" class="control-btn">⬇️ Slide</button>
+        <button id="power-btn" class="control-btn power-btn">⚡ Power</button>
+    </div>
+
+    <!-- Start Screen -->
+    <div id="start-screen" class="overlay">
+        <div class="overlay-content">
+            <h1>🦸 HERO RUNNER 3D</h1>
+            <p>Run through the 3D city, unlock your powers, save the day!</p>
+            <div class="instructions">
+                <p>⌨️ SPACE to Jump</p>
+                <p>⬇️ S to Slide</p>
+                <p>⚡ F to Activate Power</p>
+            </div>
+            <input type="text" id="player-name" placeholder="Enter your hero name" maxlength="20">
+            <button id="start-btn" class="primary-btn">START RUNNING</button>
+        </div>
+    </div>
+
+    <!-- Game Over Screen -->
+    <div id="game-over-screen" class="overlay hidden">
+        <div class="overlay-content">
+            <h1>💀 GAME OVER</h1>
+            <div class="game-stats">
+                <div class="stat"><span class="stat-label">Distance</span><span class="stat-value" id="final-distance">0m</span></div>
+                <div class="stat"><span class="stat-label">Score</span><span class="stat-value" id="final-score">0</span></div>
+                <div class="stat"><span class="stat-label">Coins</span><span class="stat-value" id="final-coins">0</span></div>
+                <div class="stat"><span class="stat-label">Powers</span><span class="stat-value" id="final-powers">0</span></div>
+            </div>
+            <button id="restart-btn" class="primary-btn">RUN AGAIN</button>
+        </div>
+    </div>
+
+    <!-- Power Unlock Notification -->
+    <div id="power-unlock" class="notification hidden">
+        <div class="notification-content">
+            <div class="power-icon" id="unlock-icon">⚡</div>
+            <div class="power-info">
+                <h3>NEW POWER UNLOCKED!</h3>
+                <p id="unlock-name">Super Speed</p>
+                <p class="power-desc" id="unlock-desc">Press F to activate</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Retention Offer -->
+    <div id="retention-offer" class="overlay hidden">
+        <div class="overlay-content offer-content">
+            <h2>🎁 SPECIAL OFFER!</h2>
+            <p id="offer-message">Come back tomorrow for a free power unlock!</p>
+            <button id="claim-btn" class="primary-btn">CLAIM REWARD</button>
+            <button id="dismiss-btn" class="secondary-btn">Later</button>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="toast hidden"></div>
+</div>
+
+<script src="js/hero3d.js"></script>
+<script src="js/powers3d.js"></script>
+<script src="js/tracker.js"></script>
+<script src="js/api.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/game3d.js"></script>
+</body>
+</html>
