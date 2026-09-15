@@ -273,4 +273,209 @@ function updateObstacles(speed) {
 function updateCoins(speed) {
     coinObjects = coinObjects.filter(c => {
         c.position.z += speed * 0.15;
-        c.rotation.z
+        c.rotation.z += 0.1;
+
+        if (Math.abs(c.position.z - hero.group.position.z) < 1 &&
+            Math.abs(c.position.x - hero.group.position.x) < 1.2 &&
+            Math.abs(c.position.y - (hero.group.position.y + 0.7)) < 1.2) {
+            createParticles(c.position.x, c.position.y, c.position.z, 0xF1C40F);
+            scene.remove(c);
+            hero.coins++;
+            return false;
+        }
+        if (c.position.z > 10) {
+            scene.remove(c);
+            return false;
+        }
+        return true;
+    });
+}
+
+function createParticles(x, y, z, color) {
+    for (let i = 0; i < 10; i++) {
+        const geo = new THREE.SphereGeometry(0.1, 6, 6);
+        const mat = new THREE.MeshBasicMaterial({ color: color });
+        const p = new THREE.Mesh(geo, mat);
+        p.position.set(x, y, z);
+        p.userData.velocity = new THREE.Vector3(
+            (Math.random() - 0.5) * 0.2,
+            Math.random() * 0.2,
+            (Math.random() - 0.5) * 0.2
+        );
+        p.userData.life = 30;
+        scene.add(p);
+        particles.push(p);
+    }
+}
+
+function updateParticles() {
+    particles = particles.filter(p => {
+        p.position.add(p.userData.velocity);
+        p.userData.life--;
+        p.scale.setScalar(p.userData.life / 30);
+        if (p.userData.life <= 0) {
+            scene.remove(p);
+            return false;
+        }
+        return true;
+    });
+}
+
+/* ============================================
+   GAME CONTROLS
+   ============================================ */
+function startGame() {
+    const name = document.getElementById('player-name').value.trim() || 'Guest';
+    document.getElementById('player-id').textContent = `Hero: ${name}`;
+    tracker = new HeroTracker(name);
+    document.getElementById('streak-info').textContent = `🔥 ${tracker.loginStreak}`;
+
+    document.getElementById('start-screen').classList.add('hidden');
+
+    if (hero) scene.remove(hero.group);
+    obstacles.forEach(o => scene.remove(o));
+    coinObjects.forEach(c => scene.remove(c));
+    particles.forEach(p => scene.remove(p));
+    obstacles = [];
+    coinObjects = [];
+    particles = [];
+
+    hero = new Hero3D(scene);
+    currentLane = 1;
+    hero.group.position.x = LANE_POSITIONS[1];
+
+    gameSpeed = 2.5;
+    timeScale = 1.0;
+    autoDefeatVillains = false;
+    isPlaying = true;
+    isGameOver = false;
+}
+
+function endGame() {
+    isPlaying = false;
+    isGameOver = true;
+    if (tracker) tracker.endSession();
+    document.getElementById('final-distance').textContent = Math.floor(hero.distance) + 'm';
+    document.getElementById('final-score').textContent = Math.floor(hero.distance / 10);
+    document.getElementById('final-coins').textContent = hero.coins;
+    document.getElementById('final-powers').textContent = hero.powers.length;
+    document.getElementById('game-over-screen').classList.remove('hidden');
+}
+
+function restartGame() {
+    document.getElementById('game-over-screen').classList.add('hidden');
+    startGame();
+}
+
+function activateBestPower() {
+    if (!hero || hero.activePower || hero.powers.length === 0) return;
+    const priority = ['hero_mode', 'lightning_storm', 'ice_time', 'fire_dash', 'force_field', 'super_speed'];
+    for (const p of priority) {
+        if (hero.powers.includes(p)) {
+            hero.activatePower(p);
+            showToast(`${POWERS[p].icon} ${POWERS[p].name} activated!`);
+            break;
+        }
+    }
+}
+
+/* ============================================
+   EVENT LISTENERS
+   ============================================ */
+document.addEventListener('DOMContentLoaded', () => {
+    initThreeJS();
+
+    document.getElementById('start-btn').addEventListener('click', startGame);
+    document.getElementById('restart-btn').addEventListener('click', restartGame);
+
+    // Touch buttons (mobile)
+    document.getElementById('jump-btn').addEventListener('touchstart', (e) => {
+        e.preventDefault(); if (hero) hero.jump();
+    });
+    document.getElementById('slide-btn').addEventListener('touchstart', (e) => {
+        e.preventDefault(); if (hero) hero.slide();
+    });
+    document.getElementById('btn-left').addEventListener('touchstart', (e) => {
+        e.preventDefault(); moveLeft();
+    });
+    document.getElementById('btn-right').addEventListener('touchstart', (e) => {
+        e.preventDefault(); moveRight();
+    });
+    document.getElementById('power-btn').addEventListener('touchstart', (e) => {
+        e.preventDefault(); activateBestPower();
+    });
+
+    // Desktop click support
+    document.getElementById('jump-btn').addEventListener('click', () => hero && hero.jump());
+    document.getElementById('slide-btn').addEventListener('click', () => hero && hero.slide());
+    document.getElementById('btn-left').addEventListener('click', moveLeft);
+    document.getElementById('btn-right').addEventListener('click', moveRight);
+    document.getElementById('power-btn').addEventListener('click', activateBestPower);
+
+    // Keyboard buttons (desktop)
+    const jd = document.getElementById('jump-btn-desk');
+    const sd = document.getElementById('slide-btn-desk');
+    const pd = document.getElementById('power-btn-desk');
+    if (jd) jd.addEventListener('click', () => hero && hero.jump());
+    if (sd) sd.addEventListener('click', () => hero && hero.slide());
+    if (pd) pd.addEventListener('click', activateBestPower);
+
+    // Retention offer
+    document.getElementById('claim-btn').addEventListener('click', () => {
+        document.getElementById('retention-offer').classList.add('hidden');
+        showToast('🎁 Reward claimed! Run again tomorrow!');
+    });
+    document.getElementById('dismiss-btn').addEventListener('click', () => {
+        document.getElementById('retention-offer').classList.add('hidden');
+    });
+
+    // SWIPE CONTROLS
+    const gameContainer = document.getElementById('game-container');
+
+    gameContainer.addEventListener('touchstart', (e) => {
+        touchStartX = e.changedTouches[0].screenX;
+        touchStartY = e.changedTouches[0].screenY;
+        touchStartTime = Date.now();
+    }, { passive: true });
+
+    gameContainer.addEventListener('touchend', (e) => {
+        if (!isPlaying || !hero) return;
+        const deltaX = e.changedTouches[0].screenX - touchStartX;
+        const deltaY = e.changedTouches[0].screenY - touchStartY;
+        const deltaTime = Date.now() - touchStartTime;
+
+        if (deltaTime > 600) return;
+
+        const minSwipe = 40;
+
+        if (Math.abs(deltaX) > Math.abs(deltaY)) {
+            if (Math.abs(deltaX) < minSwipe) return;
+            if (deltaX > 0) moveRight();
+            else moveLeft();
+        } else {
+            if (Math.abs(deltaY) < minSwipe) return;
+            if (deltaY < 0) hero.jump();
+            else hero.slide();
+        }
+    }, { passive: true });
+
+    // KEYBOARD
+    document.addEventListener('keydown', (e) => {
+        if (e.code === 'Space') { e.preventDefault(); if (isPlaying && hero) hero.jump(); }
+        if (e.code === 'KeyS') { e.preventDefault(); if (isPlaying && hero) hero.slide(); }
+        if (e.code === 'KeyF') { e.preventDefault(); if (isPlaying) activateBestPower(); }
+        if (e.code === 'ArrowLeft' || e.code === 'KeyA') { e.preventDefault(); if (isPlaying) moveLeft(); }
+        if (e.code === 'ArrowRight' || e.code === 'KeyD') { e.preventDefault(); if (isPlaying) moveRight(); }
+    });
+
+    // RESIZE
+    window.addEventListener('resize', () => {
+        if (!renderer || !camera) return;
+        const container = document.getElementById('canvas-container');
+        const width = container.clientWidth;
+        const height = container.clientHeight;
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+        renderer.setSize(width, height);
+    });
+});
