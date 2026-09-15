@@ -1,5 +1,5 @@
 /* ============================================
-   3D GAME ENGINE - Mobile + Slower Speed
+   3D GAME ENGINE + DDA
    ============================================ */
 let scene, camera, renderer;
 let currentLane = 1;
@@ -8,9 +8,20 @@ let touchStartX = 0;
 let touchStartY = 0;
 let touchStartTime = 0;
 
-// SLOWER game speed (was 5, now 2.5)
+// Base game variables
+let baseSpeed = 2.5;
 let gameSpeed = 2.5;
 let timeScale = 1.0;
+let obstacleSpawnRate = 0.015;
+let coinSpawnRate = 0.03;
+
+// DDA variables
+let ddaEnabled = true;
+let ddaCheckInterval = 2000; // check every 2 seconds
+let lastDDACheck = 0;
+let currentDifficulty = 'Normal'; // Easy, Normal, Hard
+let ddaMode = 'Normal';
+
 let autoDefeatVillains = false;
 let isPlaying = false;
 let isGameOver = false;
@@ -123,6 +134,131 @@ function createBuildings() {
 }
 
 /* ============================================
+   DDA ENGINE
+   ============================================ */
+function evaluateDDA() {
+    if (!ddaEnabled || !tracker || !hero) return;
+
+    const now = Date.now();
+    if (now - lastDDACheck < ddaCheckInterval) return;
+    lastDDACheck = now;
+
+    const state = tracker.getDDAState();
+    const previousMode = ddaMode;
+
+    // Determine DDA mode
+    if (state.consecutiveDeaths >= 3) {
+        ddaMode = 'Mercy';      // Player keeps dying → make it very easy
+    } else if (state.isStruggling) {
+        ddaMode = 'Easy';       // Player struggling → ease up
+    } else if (state.isBored) {
+        ddaMode = 'Challenge';  // Player bored → spice it up
+    } else if (state.isDoingWell && state.distance > 2000) {
+        ddaMode = 'Hard';       // Player skilled → challenge them
+    } else {
+        ddaMode = 'Normal';     // Default
+    }
+
+    // Apply DDA settings
+    applyDDAMode(ddaMode);
+
+    // Notify player if mode changed
+    if (previousMode !== ddaMode && (ddaMode === 'Mercy' || ddaMode === 'Easy')) {
+        if (typeof showToast === 'function') {
+            showToast(`💙 ${ddaMode} Mode: Taking it easy!`);
+        }
+    }
+    if (previousMode !== ddaMode && (ddaMode === 'Hard' || ddaMode === 'Challenge')) {
+        if (typeof showToast === 'function') {
+            showToast(`🔥 ${ddaMode} Mode: You're on fire!`);
+        }
+    }
+
+    updateDDAIndicator(ddaMode);
+}
+
+function applyDDAMode(mode) {
+    switch (mode) {
+        case 'Mercy':
+            gameSpeed = Math.max(1.5, baseSpeed * 0.6);
+            obstacleSpawnRate = 0.008;
+            coinSpawnRate = 0.06;   // More coins to reward
+            currentDifficulty = 'Very Easy';
+            break;
+
+        case 'Easy':
+            gameSpeed = Math.max(1.8, baseSpeed * 0.75);
+            obstacleSpawnRate = 0.011;
+            coinSpawnRate = 0.045;
+            currentDifficulty = 'Easy';
+            break;
+
+        case 'Normal':
+            gameSpeed = baseSpeed;
+            obstacleSpawnRate = 0.015;
+            coinSpawnRate = 0.03;
+            currentDifficulty = 'Normal';
+            break;
+
+        case 'Challenge':
+            gameSpeed = Math.min(4.0, baseSpeed * 1.15);
+            obstacleSpawnRate = 0.02;
+            coinSpawnRate = 0.025;
+            currentDifficulty = 'Challenge';
+            break;
+
+        case 'Hard':
+            gameSpeed = Math.min(5.0, baseSpeed * 1.3);
+            obstacleSpawnRate = 0.025;
+            coinSpawnRate = 0.02;
+            currentDifficulty = 'Hard';
+            break;
+    }
+}
+
+function updateDDAIndicator(mode) {
+    let el = document.getElementById('dda-indicator');
+    if (!el) {
+        el = document.createElement('div');
+        el.id = 'dda-indicator';
+        el.style.cssText = `
+            position: absolute;
+            top: 110px;
+            left: 10px;
+            padding: 5px 12px;
+            background: rgba(13,43,78,0.85);
+            border: 2px solid #00b8b8;
+            border-radius: 20px;
+            color: #eaf4fb;
+            font-size: 11px;
+            font-weight: bold;
+            z-index: 10;
+            backdrop-filter: blur(10px);
+        `;
+        document.getElementById('game-container').appendChild(el);
+    }
+
+    const modeColors = {
+        'Mercy': '#2ecc71',
+        'Easy': '#3498db',
+        'Normal': '#00b8b8',
+        'Challenge': '#f39c12',
+        'Hard': '#e74c3c'
+    };
+
+    const modeIcons = {
+        'Mercy': '💙',
+        'Easy': '🟢',
+        'Normal': '⚪',
+        'Challenge': '🟡',
+        'Hard': '🔴'
+    };
+
+    el.style.borderColor = modeColors[mode];
+    el.textContent = `${modeIcons[mode]} ${mode} Mode`;
+}
+
+/* ============================================
    LANE SWITCHING
    ============================================ */
 function moveLeft() {
@@ -187,8 +323,12 @@ function animate() {
         tracker.updateCoins(hero.coins);
     }
 
-    if (Math.random() < 0.015) spawnObstacle();
-    if (Math.random() < 0.03) spawnCoin();
+    // DDA EVALUATION
+    evaluateDDA();
+
+    // Adaptive spawn rates
+    if (Math.random() < obstacleSpawnRate) spawnObstacle();
+    if (Math.random() < coinSpawnRate) spawnCoin();
 
     updateObstacles(effectiveSpeed);
     updateCoins(effectiveSpeed);
@@ -344,9 +484,17 @@ function startGame() {
     currentLane = 1;
     hero.group.position.x = LANE_POSITIONS[1];
 
+    // Reset DDA
+    baseSpeed = 2.5;
     gameSpeed = 2.5;
+    obstacleSpawnRate = 0.015;
+    coinSpawnRate = 0.03;
     timeScale = 1.0;
     autoDefeatVillains = false;
+    ddaMode = 'Normal';
+    lastDDACheck = Date.now();
+    updateDDAIndicator(ddaMode);
+
     isPlaying = true;
     isGameOver = false;
 }
@@ -354,7 +502,13 @@ function startGame() {
 function endGame() {
     isPlaying = false;
     isGameOver = true;
-    if (tracker) tracker.endSession();
+
+    // DDA: Record death for difficulty adjustment
+    if (tracker) {
+        tracker.recordDeath(hero.distance);
+        tracker.endSession();
+    }
+
     document.getElementById('final-distance').textContent = Math.floor(hero.distance) + 'm';
     document.getElementById('final-score').textContent = Math.floor(hero.distance / 10);
     document.getElementById('final-coins').textContent = hero.coins;
@@ -388,7 +542,6 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('start-btn').addEventListener('click', startGame);
     document.getElementById('restart-btn').addEventListener('click', restartGame);
 
-    // Touch buttons (mobile)
     document.getElementById('jump-btn').addEventListener('touchstart', (e) => {
         e.preventDefault(); if (hero) hero.jump();
     });
@@ -405,14 +558,12 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault(); activateBestPower();
     });
 
-    // Desktop click support
     document.getElementById('jump-btn').addEventListener('click', () => hero && hero.jump());
     document.getElementById('slide-btn').addEventListener('click', () => hero && hero.slide());
     document.getElementById('btn-left').addEventListener('click', moveLeft);
     document.getElementById('btn-right').addEventListener('click', moveRight);
     document.getElementById('power-btn').addEventListener('click', activateBestPower);
 
-    // Keyboard buttons (desktop)
     const jd = document.getElementById('jump-btn-desk');
     const sd = document.getElementById('slide-btn-desk');
     const pd = document.getElementById('power-btn-desk');
@@ -420,7 +571,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (sd) sd.addEventListener('click', () => hero && hero.slide());
     if (pd) pd.addEventListener('click', activateBestPower);
 
-    // Retention offer
     document.getElementById('claim-btn').addEventListener('click', () => {
         document.getElementById('retention-offer').classList.add('hidden');
         showToast('🎁 Reward claimed! Run again tomorrow!');
@@ -429,7 +579,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('retention-offer').classList.add('hidden');
     });
 
-    // SWIPE CONTROLS
     const gameContainer = document.getElementById('game-container');
 
     gameContainer.addEventListener('touchstart', (e) => {
@@ -445,7 +594,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const deltaTime = Date.now() - touchStartTime;
 
         if (deltaTime > 600) return;
-
         const minSwipe = 40;
 
         if (Math.abs(deltaX) > Math.abs(deltaY)) {
@@ -459,7 +607,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }, { passive: true });
 
-    // KEYBOARD
     document.addEventListener('keydown', (e) => {
         if (e.code === 'Space') { e.preventDefault(); if (isPlaying && hero) hero.jump(); }
         if (e.code === 'KeyS') { e.preventDefault(); if (isPlaying && hero) hero.slide(); }
@@ -468,7 +615,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.code === 'ArrowRight' || e.code === 'KeyD') { e.preventDefault(); if (isPlaying) moveRight(); }
     });
 
-    // RESIZE
     window.addEventListener('resize', () => {
         if (!renderer || !camera) return;
         const container = document.getElementById('canvas-container');
