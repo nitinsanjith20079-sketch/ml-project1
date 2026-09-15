@@ -1,3 +1,7 @@
+/* ============================================
+   AKATSUKI-STYLE HERO MODEL
+   Dark cloaked ninja with red cloud pattern
+   ============================================ */
 class Hero3D {
     constructor(scene) {
         this.scene = scene;
@@ -8,78 +12,222 @@ class Hero3D {
     createModel() {
         this.group = new THREE.Group();
 
-        const bodyGeo = new THREE.BoxGeometry(1, 1.2, 0.6);
-        const bodyMat = new THREE.MeshStandardMaterial({
-            color: 0xE74C3C, metalness: 0.3, roughness: 0.6
+        // ============================================
+        // CLOAK (long black robe)
+        // ============================================
+        const cloakGeo = new THREE.CylinderGeometry(0.55, 1.1, 2.4, 12);
+        const cloakMat = new THREE.MeshStandardMaterial({
+            color: 0x0a0a0a,
+            metalness: 0.3,
+            roughness: 0.9
         });
-        this.body = new THREE.Mesh(bodyGeo, bodyMat);
-        this.body.position.y = 0.6;
-        this.body.castShadow = true;
-        this.group.add(this.body);
+        this.cloak = new THREE.Mesh(cloakGeo, cloakMat);
+        this.cloak.position.y = 0.5;
+        this.cloak.castShadow = true;
+        this.group.add(this.cloak);
 
-        const headGeo = new THREE.SphereGeometry(0.35, 16, 16);
+        // High collar
+        const collarGeo = new THREE.CylinderGeometry(0.6, 0.55, 0.6, 12, 1, true);
+        const collarMat = new THREE.MeshStandardMaterial({
+            color: 0x0a0a0a,
+            metalness: 0.3,
+            roughness: 0.9,
+            side: THREE.DoubleSide
+        });
+        this.collar = new THREE.Mesh(collarGeo, collarMat);
+        this.collar.position.y = 1.7;
+        this.group.add(this.collar);
+
+        // ============================================
+        // RED CLOUD PATTERNS (Akatsuki symbol - simplified)
+        // ============================================
+        const cloudMat = new THREE.MeshStandardMaterial({
+            color: 0xb8232a,
+            metalness: 0.1,
+            roughness: 0.8
+        });
+
+        // Cloud 1 - chest area
+        const cloud1 = this.createCloud(cloudMat);
+        cloud1.position.set(0, 1.1, 0.56);
+        cloud1.scale.setScalar(0.5);
+        this.group.add(cloud1);
+
+        // Cloud 2 - lower robe
+        const cloud2 = this.createCloud(cloudMat);
+        cloud2.position.set(-0.4, 0.1, 0.9);
+        cloud2.scale.setScalar(0.55);
+        cloud2.rotation.z = 0.3;
+        this.group.add(cloud2);
+
+        // Cloud 3 - right side
+        const cloud3 = this.createCloud(cloudMat);
+        cloud3.position.set(0.45, 0.4, 0.85);
+        cloud3.scale.setScalar(0.45);
+        cloud3.rotation.z = -0.4;
+        this.group.add(cloud3);
+
+        // ============================================
+        // HEAD
+        // ============================================
+        const headGeo = new THREE.SphereGeometry(0.32, 16, 16);
         const headMat = new THREE.MeshStandardMaterial({
-            color: 0xF39C12, metalness: 0.2, roughness: 0.7
+            color: 0xf0c9a0,
+            metalness: 0.1,
+            roughness: 0.9
         });
         this.head = new THREE.Mesh(headGeo, headMat);
-        this.head.position.y = 1.5;
+        this.head.position.y = 1.95;
         this.head.castShadow = true;
         this.group.add(this.head);
 
-        const maskGeo = new THREE.BoxGeometry(0.5, 0.15, 0.4);
-        const maskMat = new THREE.MeshStandardMaterial({ color: 0x2C3E50 });
-        this.mask = new THREE.Mesh(maskGeo, maskMat);
-        this.mask.position.set(0, 1.55, 0.15);
-        this.group.add(this.mask);
-
-        const capeGeo = new THREE.PlaneGeometry(0.9, 1.3);
-        const capeMat = new THREE.MeshStandardMaterial({
-            color: 0xC0392B, side: THREE.DoubleSide, metalness: 0.2, roughness: 0.8
+        // Hair (dark, spiky)
+        const hairGeo = new THREE.SphereGeometry(0.34, 16, 16, 0, Math.PI * 2, 0, Math.PI * 0.6);
+        const hairMat = new THREE.MeshStandardMaterial({
+            color: 0x1a1a1a,
+            metalness: 0.2,
+            roughness: 0.8
         });
-        this.cape = new THREE.Mesh(capeGeo, capeMat);
-        this.cape.position.set(0, 0.7, -0.4);
-        this.cape.rotation.x = 0.2;
-        this.group.add(this.cape);
+        this.hair = new THREE.Mesh(hairGeo, hairMat);
+        this.hair.position.y = 1.97;
+        this.group.add(this.hair);
 
-        const armGeo = new THREE.BoxGeometry(0.2, 0.7, 0.2);
-        const armMat = new THREE.MeshStandardMaterial({ color: 0xE74C3C });
+        // Hair spikes (back)
+        for (let i = 0; i < 5; i++) {
+            const spikeGeo = new THREE.ConeGeometry(0.06, 0.35, 6);
+            const spike = new THREE.Mesh(spikeGeo, hairMat);
+            spike.position.set(
+                (i - 2) * 0.1,
+                1.9 + Math.random() * 0.05,
+                -0.25
+            );
+            spike.rotation.x = -0.6 - Math.random() * 0.2;
+            this.group.add(spike);
+        }
 
-        this.leftArm = new THREE.Mesh(armGeo, armMat);
-        this.leftArm.position.set(-0.65, 0.7, 0);
+        // ============================================
+        // EYES (visible under hair)
+        // ============================================
+        const eyeMat = new THREE.MeshBasicMaterial({ color: 0x8b0000 });
+
+        const leftEye = new THREE.Mesh(
+            new THREE.SphereGeometry(0.04, 8, 8),
+            eyeMat
+        );
+        leftEye.position.set(-0.1, 1.96, 0.3);
+        this.group.add(leftEye);
+
+        const rightEye = new THREE.Mesh(
+            new THREE.SphereGeometry(0.04, 8, 8),
+            eyeMat
+        );
+        rightEye.position.set(0.1, 1.96, 0.3);
+        this.group.add(rightEye);
+
+        // ============================================
+        // ARMS (hidden under cloak, small dark sleeves)
+        // ============================================
+        const sleeveGeo = new THREE.CylinderGeometry(0.15, 0.2, 0.9, 8);
+        const sleeveMat = new THREE.MeshStandardMaterial({
+            color: 0x0a0a0a,
+            metalness: 0.3,
+            roughness: 0.9
+        });
+
+        this.leftArm = new THREE.Mesh(sleeveGeo, sleeveMat);
+        this.leftArm.position.set(-0.7, 1.1, 0);
+        this.leftArm.rotation.z = 0.3;
         this.group.add(this.leftArm);
 
-        this.rightArm = new THREE.Mesh(armGeo, armMat);
-        this.rightArm.position.set(0.65, 0.7, 0);
+        this.rightArm = new THREE.Mesh(sleeveGeo, sleeveMat);
+        this.rightArm.position.set(0.7, 1.1, 0);
+        this.rightArm.rotation.z = -0.3;
         this.group.add(this.rightArm);
 
-        const legGeo = new THREE.BoxGeometry(0.25, 0.7, 0.25);
-        const legMat = new THREE.MeshStandardMaterial({ color: 0x2C3E50 });
+        // ============================================
+        // LEGS / FEET (visible below cloak)
+        // ============================================
+        const footGeo = new THREE.BoxGeometry(0.2, 0.2, 0.35);
+        const footMat = new THREE.MeshStandardMaterial({
+            color: 0x0a0a0a,
+            metalness: 0.2,
+            roughness: 0.9
+        });
 
-        this.leftLeg = new THREE.Mesh(legGeo, legMat);
-        this.leftLeg.position.set(-0.2, -0.35, 0);
+        this.leftLeg = new THREE.Mesh(footGeo, footMat);
+        this.leftLeg.position.set(-0.25, -0.75, 0);
         this.group.add(this.leftLeg);
 
-        this.rightLeg = new THREE.Mesh(legGeo, legMat);
-        this.rightLeg.position.set(0.2, -0.35, 0);
+        this.rightLeg = new THREE.Mesh(footGeo, footMat);
+        this.rightLeg.position.set(0.25, -0.75, 0);
         this.group.add(this.rightLeg);
 
-        const auraGeo = new THREE.SphereGeometry(1.2, 32, 32);
+        // ============================================
+        // POWER AURA (invisible by default)
+        // ============================================
+        const auraGeo = new THREE.SphereGeometry(1.4, 32, 32);
         const auraMat = new THREE.MeshBasicMaterial({
-            color: 0xF1C40F, transparent: true, opacity: 0, wireframe: true
+            color: 0xF1C40F,
+            transparent: true,
+            opacity: 0,
+            wireframe: true
         });
         this.aura = new THREE.Mesh(auraGeo, auraMat);
-        this.aura.position.y = 0.7;
+        this.aura.position.y = 0.5;
         this.group.add(this.aura);
 
         this.group.position.set(-6, 0, 0);
         this.scene.add(this.group);
     }
 
+    /* ============================================
+       HELPER: Create an Akatsuki-style cloud shape
+       ============================================ */
+    createCloud(material) {
+        const cloudGroup = new THREE.Group();
+
+        // Main circle
+        const main = new THREE.Mesh(
+            new THREE.SphereGeometry(0.3, 8, 8),
+            material
+        );
+        cloudGroup.add(main);
+
+        // Red border ring
+        const ring = new THREE.Mesh(
+            new THREE.TorusGeometry(0.32, 0.05, 6, 16),
+            new THREE.MeshStandardMaterial({
+                color: 0xffffff,
+                metalness: 0.1,
+                roughness: 0.8
+            })
+        );
+        cloudGroup.add(ring);
+
+        // Small bumps (cloud-like)
+        const positions = [
+            [0.25, 0.15, 0],
+            [-0.25, 0.15, 0],
+            [0.2, -0.2, 0],
+            [-0.2, -0.2, 0]
+        ];
+
+        positions.forEach(pos => {
+            const bump = new THREE.Mesh(
+                new THREE.SphereGeometry(0.12, 8, 8),
+                material
+            );
+            bump.position.set(pos[0], pos[1], pos[2]);
+            cloudGroup.add(bump);
+        });
+
+        return cloudGroup;
+    }
+
     reset() {
         this.x = -6;
         this.y = 0;
         this.velocityY = 0;
-        // SLOWER gravity + jump
         this.gravity = -0.018;
         this.jumpPower = 0.32;
         this.isJumping = false;
@@ -100,6 +248,7 @@ class Hero3D {
         if (this.group) {
             this.group.position.set(-6, 0, 0);
             this.group.rotation.set(0, 0, 0);
+            this.group.scale.set(1, 1, 1);
             this.aura.material.opacity = 0;
         }
     }
@@ -135,21 +284,30 @@ class Hero3D {
         this.group.position.y = this.y;
         this.distance += gameSpeed;
 
-        // SLOWER run animation
+        // Slower run animation
         const runCycle = this.distance * 0.06;
-        this.leftLeg.rotation.x = Math.sin(runCycle) * 0.4;
-        this.rightLeg.rotation.x = Math.sin(runCycle + Math.PI) * 0.4;
-        this.leftArm.rotation.x = Math.sin(runCycle + Math.PI) * 0.3;
-        this.rightArm.rotation.x = Math.sin(runCycle) * 0.3;
 
-        this.cape.rotation.x = 0.2 + Math.sin(runCycle * 2) * 0.12;
+        // Legs (small foot movement)
+        this.leftLeg.position.z = Math.sin(runCycle) * 0.15;
+        this.rightLeg.position.z = Math.sin(runCycle + Math.PI) * 0.15;
 
+        // Subtle arm sway
+        this.leftArm.rotation.x = Math.sin(runCycle + Math.PI) * 0.15;
+        this.rightArm.rotation.x = Math.sin(runCycle) * 0.15;
+
+        // Cloak sway
+        this.cloak.rotation.z = Math.sin(runCycle * 0.5) * 0.03;
+
+        // Hair float
+        this.hair.position.y = 1.97 + Math.sin(Date.now() * 0.003) * 0.015;
+
+        // Power aura
         if (this.activePower) {
             this.powerTimer--;
             if (this.powerTimer <= 0) {
                 this.deactivatePower();
             } else {
-                this.aura.material.opacity = 0.3 + Math.sin(Date.now() * 0.01) * 0.2;
+                this.aura.material.opacity = 0.25 + Math.sin(Date.now() * 0.01) * 0.15;
                 this.aura.rotation.y += 0.03;
             }
         }
