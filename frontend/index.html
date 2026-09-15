@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0d2b4e">
-<title>🦸 HERO RUNNER 3D</title>
+<title>🦅 Itachi Chase</title>
 <link rel="stylesheet" href="css/style.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
@@ -14,9 +14,9 @@
 
 <div id="game-container">
     <header id="game-header">
-        <div class="logo">🦸 HERO RUNNER</div>
+        <div class="logo">🦅 ITACHI CHASE</div>
         <div class="player-info">
-            <span id="player-id">Hero: Guest</span>
+            <span id="player-id">Ninja: Guest</span>
             <span id="streak-info">🔥 0</span>
         </div>
     </header>
@@ -33,7 +33,7 @@
             <span class="hud-value" id="score">0</span>
         </div>
         <div class="hud-item">
-            <span class="hud-label">Coins</span>
+            <span class="hud-label">Orbs</span>
             <span class="hud-value" id="coins">0</span>
         </div>
         <div class="hud-item">
@@ -78,28 +78,28 @@
 
     <div id="start-screen" class="overlay">
         <div class="overlay-content">
-            <h1>🦸 HERO RUNNER 3D</h1>
-            <p>Run, dodge, and unlock your powers!</p>
+            <h1>🦅 ITACHI CHASE</h1>
+            <p>Run through the night, collect Sharingan orbs, unlock your powers!</p>
             <div class="instructions">
                 <p>📱 Mobile: Swipe or tap buttons</p>
                 <p>💻 Desktop: SPACE=Jump | S=Slide | F=Power</p>
                 <p>⬅️➡️ Swipe to change lanes</p>
             </div>
-            <input type="text" id="player-name" placeholder="Enter your hero name" maxlength="20">
-            <button id="start-btn" class="primary-btn">START RUNNING</button>
+            <input type="text" id="player-name" placeholder="Enter your ninja name" maxlength="20">
+            <button id="start-btn" class="primary-btn">START CHASE</button>
         </div>
     </div>
 
     <div id="game-over-screen" class="overlay hidden">
         <div class="overlay-content">
-            <h1>💀 GAME OVER</h1>
+            <h1>💀 CAUGHT</h1>
             <div class="game-stats">
                 <div class="stat"><span class="stat-label">Distance</span><span class="stat-value" id="final-distance">0m</span></div>
                 <div class="stat"><span class="stat-label">Score</span><span class="stat-value" id="final-score">0</span></div>
-                <div class="stat"><span class="stat-label">Coins</span><span class="stat-value" id="final-coins">0</span></div>
+                <div class="stat"><span class="stat-label">Orbs</span><span class="stat-value" id="final-coins">0</span></div>
                 <div class="stat"><span class="stat-label">Powers</span><span class="stat-value" id="final-powers">0</span></div>
             </div>
-            <button id="restart-btn" class="primary-btn">RUN AGAIN</button>
+            <button id="restart-btn" class="primary-btn">CHASE AGAIN</button>
         </div>
     </div>
 
@@ -116,7 +116,7 @@
 
     <div id="retention-offer" class="overlay hidden">
         <div class="overlay-content offer-content">
-            <h2>🎁 SPECIAL OFFER!</h2>
+            <h2>🎁 SCROLL OF RETURN!</h2>
             <p id="offer-message">Come back tomorrow for a free power unlock!</p>
             <button id="claim-btn" class="primary-btn">CLAIM</button>
             <button id="dismiss-btn" class="secondary-btn">Later</button>
