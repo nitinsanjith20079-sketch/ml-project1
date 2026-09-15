@@ -1,5 +1,6 @@
 /* ============================================
-   3D GAME ENGINE + DDA + STRAIGHT CAMERA
+   3D GAME ENGINE + DDA + STRAIGHT CAMERA + LANES
+   Complete file - replace entire content
    ============================================ */
 let scene, camera, renderer;
 let currentLane = 1;
@@ -104,10 +105,11 @@ function createRoad() {
         }
     }
 
-    // Edge lines
+    // Edge lines (yellow)
     for (let i = 0; i < 60; i++) {
         const edgeGeo = new THREE.PlaneGeometry(0.2, 2);
         const edgeMat = new THREE.MeshBasicMaterial({ color: 0xffcc00 });
+
         const edgeL = new THREE.Mesh(edgeGeo, edgeMat);
         edgeL.rotation.x = -Math.PI / 2;
         edgeL.position.set(-9, 0.01, -i * 4 + 20);
@@ -332,7 +334,7 @@ function animate() {
     hero.update(effectiveSpeed);
 
     // ============================================
-    // CAMERA FOLLOWS HERO'S LANE
+    // CAMERA FOLLOWS HERO'S LANE SMOOTHLY
     // ============================================
     const targetCamX = hero.group.position.x;
     camera.position.x += (targetCamX - camera.position.x) * 0.08;
