@@ -378,3 +378,9 @@ html, body {
     .stat-value { font-size: 28px; }
     .stat-label { font-size: 12px; }
 }
+/* ============================================
+   DDA INDICATOR
+   ============================================ */
+#dda-indicator {
+    animation: pulse 2s infinite;
+}
