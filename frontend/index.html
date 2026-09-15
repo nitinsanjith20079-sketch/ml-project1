@@ -2,7 +2,10 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0d2b4e">
 <title>🦸 HERO RUNNER 3D</title>
 <link rel="stylesheet" href="css/style.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -10,19 +13,16 @@
 <body>
 
 <div id="game-container">
-    <!-- Header -->
     <header id="game-header">
-        <div class="logo">🦸 HERO RUNNER 3D</div>
+        <div class="logo">🦸 HERO RUNNER</div>
         <div class="player-info">
             <span id="player-id">Hero: Guest</span>
-            <span id="streak-info">🔥 Streak: 0</span>
+            <span id="streak-info">🔥 0</span>
         </div>
     </header>
 
-    <!-- 3D Canvas -->
     <div id="canvas-container"></div>
 
-    <!-- HUD -->
     <div id="hud">
         <div class="hud-item">
             <span class="hud-label">Distance</span>
@@ -42,7 +42,6 @@
         </div>
     </div>
 
-    <!-- Power Progress Bar -->
     <div id="power-progress">
         <div class="progress-label">Next Power Unlock</div>
         <div class="progress-bar">
@@ -51,32 +50,46 @@
         <div class="progress-text" id="power-progress-text">500m to go</div>
     </div>
 
-    <!-- Active Powers -->
     <div id="active-powers"></div>
 
-    <!-- Controls -->
-    <div id="controls">
-        <button id="jump-btn" class="control-btn">⬆️ Jump</button>
-        <button id="slide-btn" class="control-btn">⬇️ Slide</button>
-        <button id="power-btn" class="control-btn power-btn">⚡ Power</button>
+    <div id="swipe-hint">
+        <div class="swipe-item">👆 Swipe Up = Jump</div>
+        <div class="swipe-item">👇 Swipe Down = Slide</div>
+        <div class="swipe-item">👈👉 Swipe L/R = Change Lane</div>
     </div>
 
-    <!-- Start Screen -->
+    <div id="touch-controls">
+        <div class="touch-row">
+            <button id="btn-left" class="touch-btn">⬅️</button>
+            <button id="jump-btn" class="touch-btn jump">⬆️</button>
+            <button id="btn-right" class="touch-btn">➡️</button>
+        </div>
+        <div class="touch-row bottom-row">
+            <button id="slide-btn" class="touch-btn slide">⬇️</button>
+            <button id="power-btn" class="touch-btn power">⚡</button>
+        </div>
+    </div>
+
+    <div id="keyboard-controls">
+        <button id="jump-btn-desk" class="control-btn">⬆️ Jump</button>
+        <button id="slide-btn-desk" class="control-btn">⬇️ Slide</button>
+        <button id="power-btn-desk" class="control-btn power-btn">⚡ Power</button>
+    </div>
+
     <div id="start-screen" class="overlay">
         <div class="overlay-content">
             <h1>🦸 HERO RUNNER 3D</h1>
-            <p>Run through the 3D city, unlock your powers, save the day!</p>
+            <p>Run, dodge, and unlock your powers!</p>
             <div class="instructions">
-                <p>⌨️ SPACE to Jump</p>
-                <p>⬇️ S to Slide</p>
-                <p>⚡ F to Activate Power</p>
+                <p>📱 Mobile: Swipe or tap buttons</p>
+                <p>💻 Desktop: SPACE=Jump | S=Slide | F=Power</p>
+                <p>⬅️➡️ Swipe to change lanes</p>
             </div>
             <input type="text" id="player-name" placeholder="Enter your hero name" maxlength="20">
             <button id="start-btn" class="primary-btn">START RUNNING</button>
         </div>
     </div>
 
-    <!-- Game Over Screen -->
     <div id="game-over-screen" class="overlay hidden">
         <div class="overlay-content">
             <h1>💀 GAME OVER</h1>
@@ -90,29 +103,26 @@
         </div>
     </div>
 
-    <!-- Power Unlock Notification -->
     <div id="power-unlock" class="notification hidden">
         <div class="notification-content">
             <div class="power-icon" id="unlock-icon">⚡</div>
             <div class="power-info">
-                <h3>NEW POWER UNLOCKED!</h3>
+                <h3>NEW POWER!</h3>
                 <p id="unlock-name">Super Speed</p>
-                <p class="power-desc" id="unlock-desc">Press F to activate</p>
+                <p class="power-desc" id="unlock-desc">Tap ⚡ to activate</p>
             </div>
         </div>
     </div>
 
-    <!-- Retention Offer -->
     <div id="retention-offer" class="overlay hidden">
         <div class="overlay-content offer-content">
             <h2>🎁 SPECIAL OFFER!</h2>
             <p id="offer-message">Come back tomorrow for a free power unlock!</p>
-            <button id="claim-btn" class="primary-btn">CLAIM REWARD</button>
+            <button id="claim-btn" class="primary-btn">CLAIM</button>
             <button id="dismiss-btn" class="secondary-btn">Later</button>
         </div>
     </div>
 
-    <!-- Toast -->
     <div id="toast" class="toast hidden"></div>
 </div>
 
